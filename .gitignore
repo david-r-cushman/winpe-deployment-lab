@@ -1,5 +1,29 @@
-# Ignore all .exe files
+# Runtime artifacts
 *.exe
-
-# Ignore all .log files
+*.iso
 *.log
+*.wim
+
+# Repo-local build workspace
+Build/*
+!Build/.gitkeep
+!Build/ISO/
+!Build/WIM/
+!Build/Logs/
+!Build/Mount/
+!Build/WinPE/
+
+Build/ISO/*
+!Build/ISO/.gitkeep
+
+Build/WIM/*
+!Build/WIM/.gitkeep
+
+Build/Logs/*
+!Build/Logs/.gitkeep
+
+Build/Mount/*
+!Build/Mount/.gitkeep
+
+Build/WinPE/*
+!Build/WinPE/.gitkeep
