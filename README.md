@@ -33,12 +33,15 @@ The repository contains tracked source, templates, and configuration. Runtime ar
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
 - [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.xml`, `Diskconfig.txt`, and `Assign-C.txt`
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
+- [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
 - [`src/Private`](src/Private): shared runtime helpers used by the script entry points
 - root-level script entry points:
   - [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1)
   - [`New-WinPECaptureISO.ps1`](New-WinPECaptureISO.ps1)
   - [`New-WinPEDeployISO.ps1`](New-WinPEDeployISO.ps1)
   - [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1)
+
+The root scripts are intentionally thin wrappers. They preserve a simple script-first operator experience while delegating the actual implementation to functions under `src/Public` and shared helpers under `src/Private`.
 
 ## Configuration
 
@@ -55,6 +58,13 @@ These values are intended to be customized per derived project repo. Runtime pat
 ## Script Usage
 
 Run these from the repository root unless noted otherwise.
+
+Internally, each root script loads and calls a corresponding public function:
+
+- `New-WinPEWorkspace.ps1` -> `Initialize-WinPEProject`
+- `New-WinPECaptureISO.ps1` -> `New-WinPECaptureIso`
+- `New-WinPEDeployISO.ps1` -> `New-WinPEDeployIso`
+- `Maintain-WIMImage.ps1` -> `Update-WinPEWimImage`
 
 ### Initialize Local Runtime Structure
 
