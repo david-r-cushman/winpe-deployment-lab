@@ -23,8 +23,9 @@ The expected workflow is:
 2. Clone the new repository locally.
 3. Review and customize [`config/osd-config.json`](config/osd-config.json) for that specific image project.
 4. Review and customize the payload templates in [`PayloadTemplates`](PayloadTemplates).
-5. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) when needed.
-6. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
+5. Use the configured `WIMName`, `ImageDescription`, and related values to match the image you actually intend to capture or deploy.
+6. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
+7. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
 
 The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
 
@@ -54,6 +55,8 @@ The root scripts are intentionally thin wrappers. They preserve a simple script-
 - `CaptureLocation`
 
 These values are intended to be customized per derived project repo. Runtime paths are not stored in config; they are calculated from the repository layout.
+
+Typical customization examples include changing the configured image name and description to match a target such as Windows 11 by edition, build, and architecture, or a specific Windows Server build.
 
 ## Script Usage
 
@@ -96,11 +99,12 @@ Mounts the configured WIM from [`Build/WIM`](Build/WIM), applies the scripted ma
 
 ```powershell
 PowerShell.exe .\New-WinPEWorkspace.ps1
-Copy-Item .\SomeReferenceImage.wim .\Build\WIM\WinSvr2022-RefImage.wim
+# Example only: use the filename configured in config\osd-config.json
+Copy-Item .\SomeReferenceImage.wim .\Build\WIM\<Configured-WIMName>.wim
 PowerShell.exe .\New-WinPEDeployISO.ps1
 ```
 
-Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates.
+Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json).
 
 ## Prerequisites
 
@@ -117,6 +121,7 @@ Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and
 - The tracked file uses placeholder password values for demonstration only.
 - A real unattended answer file should be reviewed and finalized locally, typically with Windows System Image Manager.
 - Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
+- This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
 
 ## Git Hygiene
 
