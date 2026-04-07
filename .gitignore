@@ -27,3 +27,5 @@ Build/Mount/*
 
 Build/WinPE/*
 !Build/WinPE/.gitkeep
+PayloadTemplates/Unattend.xml
+

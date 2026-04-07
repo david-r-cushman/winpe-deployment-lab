@@ -8,6 +8,7 @@ function Initialize-WinPEProject {
     $context = Get-WinPEProjectContext -ProjectRoot $ProjectRoot
     Initialize-WinPEProjectRuntime -Context $context
     Initialize-WorkspaceLogging -WorkspaceRoot $context.ProjectRoot -LogRoot $context.Paths.LogRoot
+    Initialize-UnattendWorkingCopy -Context $context
 
     Write-WorkspaceLog "Validated project configuration: $($context.ConfigPath)" -Level SUCCESS
     Write-WorkspaceLog "Runtime root ready at $($context.Paths.BuildRoot)" -Level SUCCESS

@@ -26,17 +26,17 @@ function Get-WinPEProjectContext {
     }
 
     $paths = [pscustomobject]@{
-        BuildRoot          = Join-Path $ProjectRoot "Build"
-        IsoRoot            = Join-Path $ProjectRoot "Build\ISO"
-        WimRoot            = Join-Path $ProjectRoot "Build\WIM"
-        LogRoot            = Join-Path $ProjectRoot "Build\Logs"
-        MountRoot          = Join-Path $ProjectRoot "Build\Mount"
-        CaptureMountRoot   = Join-Path $ProjectRoot "Build\Mount\Capture"
-        DeployMountRoot    = Join-Path $ProjectRoot "Build\Mount\Deploy"
-        WimMountRoot       = Join-Path $ProjectRoot "Build\Mount\WIM"
-        WinPERoot          = Join-Path $ProjectRoot "Build\WinPE"
-        CaptureWorkRoot    = Join-Path $ProjectRoot "Build\WinPE\Capture"
-        DeployWorkRoot     = Join-Path $ProjectRoot "Build\WinPE\Deploy"
+        BuildRoot           = Join-Path $ProjectRoot "Build"
+        IsoRoot             = Join-Path $ProjectRoot "Build\ISO"
+        WimRoot             = Join-Path $ProjectRoot "Build\WIM"
+        LogRoot             = Join-Path $ProjectRoot "Build\Logs"
+        MountRoot           = Join-Path $ProjectRoot "Build\Mount"
+        CaptureMountRoot    = Join-Path $ProjectRoot "Build\Mount\Capture"
+        DeployMountRoot     = Join-Path $ProjectRoot "Build\Mount\Deploy"
+        WimMountRoot        = Join-Path $ProjectRoot "Build\Mount\WIM"
+        WinPERoot           = Join-Path $ProjectRoot "Build\WinPE"
+        CaptureWorkRoot     = Join-Path $ProjectRoot "Build\WinPE\Capture"
+        DeployWorkRoot      = Join-Path $ProjectRoot "Build\WinPE\Deploy"
         PayloadTemplateRoot = Join-Path $ProjectRoot "PayloadTemplates"
     }
 
@@ -75,6 +75,30 @@ function Initialize-WinPEProjectRuntime {
 
     if (-not (Test-Path -LiteralPath $Context.Paths.PayloadTemplateRoot)) {
         throw "Payload template folder not found at '$($Context.Paths.PayloadTemplateRoot)'."
+    }
+}
+
+function Initialize-UnattendWorkingCopy {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
+
+    $templatePath = Join-Path $Context.Paths.PayloadTemplateRoot "Unattend.Template.xml"
+    $workingPath = Join-Path $Context.Paths.PayloadTemplateRoot "Unattend.xml"
+
+    if (-not (Test-Path -LiteralPath $templatePath)) {
+        throw "Unattend template not found at '$templatePath'."
+    }
+
+    if (-not (Test-Path -LiteralPath $workingPath)) {
+        Copy-Item -LiteralPath $templatePath -Destination $workingPath -Force
+        Write-WorkspaceLog "Created local unattend working file from template: $workingPath" -Level SUCCESS
+        Write-WorkspaceLog "Review and update $workingPath locally with Windows System Image Manager before building deployment media." -Level WARNING
+    }
+    else {
+        Write-WorkspaceLog "Local unattend working file already exists: $workingPath" -Level INFO
     }
 }
 

@@ -24,15 +24,17 @@ The expected workflow is:
 3. Review and customize [`config/osd-config.json`](config/osd-config.json) for that specific image project.
 4. Review and customize the payload templates in [`PayloadTemplates`](PayloadTemplates).
 5. Use the configured `WIMName`, `ImageDescription`, and related values to match the image you actually intend to capture or deploy.
-6. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
-7. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
+6. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) once to initialize the local runtime folders and create a local `PayloadTemplates/Unattend.xml` working copy from the tracked template.
+7. Open the local `PayloadTemplates/Unattend.xml` in Windows System Image Manager, update the required password values, and save the file locally.
+8. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
+9. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
 
 The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
 
 ## Repository Layout
 
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
-- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.xml`, `Diskconfig.txt`, and `Assign-C.txt`
+- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.Template.xml`, `Diskconfig.txt`, and `Assign-C.txt`
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
 - [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
 - [`src/Private`](src/Private): shared runtime helpers used by the script entry points
@@ -75,7 +77,7 @@ Internally, each root script loads and calls a corresponding public function:
 PowerShell.exe .\New-WinPEWorkspace.ps1
 ```
 
-Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output.
+Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output. It also creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy from [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) when needed.
 
 ### Build Capture ISO
 
@@ -116,10 +118,10 @@ Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and
 
 ## Security Notes
 
-[`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) is a template/example file, not a place to store real credentials in source control.
+[`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) is the tracked template/example file. [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) is the local working copy created during initialization and is ignored by git.
 
-- The tracked file uses placeholder password values for demonstration only.
-- A real unattended answer file should be reviewed and finalized locally, typically with Windows System Image Manager.
+- The tracked template uses placeholder password values for demonstration only.
+- The local working copy should be reviewed and finalized locally with Windows System Image Manager.
 - Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
 - This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
 
@@ -130,6 +132,7 @@ Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and
 - `*.wim`
 - `*.iso`
 - `*.log`
+- `PayloadTemplates/Unattend.xml`
 - repo-local `Build` output and mount contents
 
 This keeps project configuration and source under version control while preventing accidental commits of large artifacts or operational state.

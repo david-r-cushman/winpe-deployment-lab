@@ -42,8 +42,13 @@ function New-WinPEDeployIso {
     foreach ($file in $payloadFiles) {
         $sourceFile = Join-Path $payloadSource $file
         if (-not (Test-Path $sourceFile)) {
+            if ($file -eq "Unattend.xml") {
+                throw "Required file missing: $sourceFile. Run .\New-WinPEWorkspace.ps1 to create the local working copy, then update it in Windows System Image Manager before building deployment media."
+            }
+
             throw "Required file missing: $sourceFile"
         }
+
         Copy-Item -Path $sourceFile -Destination $deployFolder -Force
         Write-WorkspaceLog "Copied $file into Deploy folder" -Level SUCCESS
     }
