@@ -11,7 +11,7 @@
 
     Logging is lifecycle-safe and recruiter-friendly:
       * All messages are written to the console immediately.
-      * Buffered messages are flushed into Logs\Workspace.log once logging is initialized.
+      * Buffered messages are flushed into Build\Logs\Workspace.log once logging is initialized.
       * All subsequent events are appended directly to the log file.
 
 .EXAMPLE
@@ -49,7 +49,7 @@ $mountPath = $context.Paths.WimMountRoot
 
 # Validate WIM file exists
 if (-not (Test-Path $wimPath)) {
-    Write-WorkspaceLog "Expected WIM file not found: $wimPath. Ensure the captured image exists in Output\WIM." -Level ERROR
+    Write-WorkspaceLog "Expected WIM file not found: $wimPath. Ensure the captured image exists in Build\WIM." -Level ERROR
     Exit 1
 }
 Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS

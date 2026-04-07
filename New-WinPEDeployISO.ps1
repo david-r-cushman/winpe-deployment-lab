@@ -11,7 +11,7 @@
 
     Logging is lifecycle-safe and recruiter-friendly:
       * All messages are written to the console immediately.
-      * Buffered messages are flushed into Logs\Workspace.log once logging is initialized.
+      * Buffered messages are flushed into Build\Logs\Workspace.log once logging is initialized.
       * All subsequent events are appended directly to the log file.
 
     The resulting ISO automates disk partitioning, applies the captured WIM to C:\,
@@ -61,7 +61,7 @@ $wimPath = Join-Path $context.Paths.WimRoot $wimName
 
 # Validate WIM file exists
 if (-not (Test-Path $wimPath)) {
-    Write-WorkspaceLog "Expected WIM file not found: $wimPath. Ensure the captured image has been copied to Output\WIM." -Level ERROR
+    Write-WorkspaceLog "Expected WIM file not found: $wimPath. Ensure the captured image has been copied to Build\WIM." -Level ERROR
     Exit 1
 }
 Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS
@@ -70,16 +70,16 @@ Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS
 $deployISOName = $context.Config.DeployISOName
 $deployISOPath = Join-Path $context.Paths.IsoRoot $deployISOName
 
-# Define WinPE workspace path
+# Define the temporary WinPE build directory
 $winPEWorkDir = $context.Paths.DeployWorkRoot
 if (Test-Path $winPEWorkDir) {
-    Write-WorkspaceLog "Removing existing WinPE workspace: $winPEWorkDir" -Level WARNING
+    Write-WorkspaceLog "Removing existing temporary WinPE build directory: $winPEWorkDir" -Level WARNING
     Remove-ItemIfPresent -Path $winPEWorkDir
 }
 
-# Create WinPE workspace
+# Create the temporary WinPE build directory
 copype.cmd amd64 $winPEWorkDir
-Write-WorkspaceLog "Created WinPE workspace at $winPEWorkDir" -Level SUCCESS
+Write-WorkspaceLog "Created temporary WinPE build directory at $winPEWorkDir" -Level SUCCESS
 
 # Create Deploy folder inside Media
 $deployFolder = Join-Path $winPEWorkDir "Media\Deploy"

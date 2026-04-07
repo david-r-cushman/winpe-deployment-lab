@@ -11,17 +11,17 @@
         Before the workspace root exists, messages are buffered in memory
         and displayed on the console. Once the workspace root is created
         and Initialize-WorkspaceLogging is called, buffered messages are
-        flushed into Logs\Workspace.log, and all subsequent messages are
+        flushed into the configured Workspace.log file, and all subsequent messages are
         appended directly to the log file.
 
     * Initialize-WorkspaceLogging
         Creates the Logs folder under the workspace root (if not present),
         sets the log file path, and flushes any buffered messages into
-        Logs\Workspace.log.
+        Workspace.log.
 
     This hybrid approach ensures immediate console feedback while also
     maintaining lifecycle-safe, recruiter-friendly log files inside the
-    workspace. Early initialization events are never lost, and every step
+    configured runtime log directory. Early initialization events are never lost, and every step
     is documented in both console and permanent log output.
 
 .NOTES
@@ -45,7 +45,7 @@ function Write-WorkspaceLog {
 
 .DESCRIPTION
     Displays a timestamped message on the console and also writes it to
-    Logs\Workspace.log once logging has been initialized. Before initialization,
+    Workspace.log once logging has been initialized. Before initialization,
     messages are buffered in memory and flushed later. This ensures lifecycle
     safety by preventing loss of early events and recruiter-friendly clarity
     by documenting every step.
@@ -59,9 +59,9 @@ function Write-WorkspaceLog {
     Default: INFO.
 
 .EXAMPLE
-    Write-WorkspaceLog "Created folder: E:\Temp\Test1\Scripts" -Level SUCCESS
+    Write-WorkspaceLog "Created runtime folder: E:\Git\winpe-deployment-lab\Build\ISO" -Level SUCCESS
 
-    Logs a success message to the console and appends it to Logs\Workspace.log.
+    Logs a success message to the console and appends it to Workspace.log.
 #>
 
     param(
@@ -104,19 +104,22 @@ function Initialize-WorkspaceLogging {
 .DESCRIPTION
     Creates a Logs folder under the workspace root (if not present),
     sets the log file path, and flushes any buffered messages into
-    Logs\Workspace.log. After initialization, all new log entries are
+    Workspace.log. After initialization, all new log entries are
     appended directly to the log file. This hybrid approach ensures
     recruiter-friendly visibility of all events and lifecycle safety
     by preserving early initialization messages.
 
 .PARAMETER WorkspaceRoot
-    The root path of the workspace where the Logs folder and log file
-    will be created.
+    The root path used when no explicit log directory is supplied.
+
+.PARAMETER LogRoot
+    Optional explicit log directory. When provided, Workspace.log is created
+    there instead of under WorkspaceRoot\Logs.
 
 .EXAMPLE
-    Initialize-WorkspaceLogging -WorkspaceRoot "E:\Temp\Test1"
+    Initialize-WorkspaceLogging -WorkspaceRoot "E:\Git\winpe-deployment-lab" -LogRoot "E:\Git\winpe-deployment-lab\Build\Logs"
 
-    Creates Logs\Workspace.log under the workspace root and flushes
+    Creates Workspace.log in the configured runtime log folder and flushes
     any buffered messages into the log file.
 #>
 

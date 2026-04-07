@@ -10,7 +10,7 @@
 
     Logging is lifecycle-safe and recruiter-friendly:
       * All messages are written to the console immediately.
-      * Buffered messages are flushed into Logs\Workspace.log once logging is initialized.
+      * Buffered messages are flushed into Build\Logs\Workspace.log once logging is initialized.
       * All subsequent events are appended directly to the log file.
 
     The resulting ISO automatically captures a WIM image of the reference VM and saves
@@ -60,16 +60,16 @@ $wimName          = $context.Config.WIMName
 $imageDescription = $context.Config.ImageDescription
 $captureLocation  = $context.Config.CaptureLocation
 
-# Define and clean WinPE workspace
+# Define and clean the temporary WinPE build directory
 $winPEWorkDir = $context.Paths.CaptureWorkRoot
 if (Test-Path -LiteralPath $winPEWorkDir) {
-    Write-WorkspaceLog "Removing existing WinPE workspace: $winPEWorkDir" -Level WARNING
+    Write-WorkspaceLog "Removing existing temporary WinPE build directory: $winPEWorkDir" -Level WARNING
     Remove-ItemIfPresent -Path $winPEWorkDir
 }
 
-# Create WinPE workspace
+# Create the temporary WinPE build directory
 copype.cmd amd64 $winPEWorkDir
-Write-WorkspaceLog "Created WinPE workspace at $winPEWorkDir" -Level SUCCESS
+Write-WorkspaceLog "Created temporary WinPE build directory at $winPEWorkDir" -Level SUCCESS
 
 # Set boot.wim location and mount directory
 $bootWim   = Join-Path "$winPEWorkDir\Media\sources" "boot.wim"
