@@ -31,6 +31,8 @@ The expected workflow is:
 
 The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
 
+WinPE now boots into a PowerShell-enabled runtime. The generated media still uses `startnet.cmd` as the entry point required by WinPE, but that file now acts only as a thin launcher for PowerShell payload scripts generated during ISO creation.
+
 ## Repository Layout
 
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
@@ -86,7 +88,7 @@ PowerShell.exe .\New-WinPEWorkspace.ps1
 PowerShell.exe .\New-WinPECaptureISO.ps1
 ```
 
-Builds a WinPE capture ISO in [`Build/ISO`](Build/ISO) using values from [`config/osd-config.json`](config/osd-config.json).
+Builds a PowerShell-enabled WinPE capture ISO in [`Build/ISO`](Build/ISO) using values from [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Capture.ps1` payload inside WinPE.
 
 ### Maintain a Captured WIM
 
@@ -106,13 +108,14 @@ Copy-Item .\SomeReferenceImage.wim .\Build\WIM\<Configured-WIMName>.wim
 PowerShell.exe .\New-WinPEDeployISO.ps1
 ```
 
-Builds a deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json).
+Builds a PowerShell-enabled deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Deploy.ps1` payload inside WinPE.
 
 ## Prerequisites
 
 - Windows
 - PowerShell
 - Windows ADK Deployment Tools / WinPE tooling
+- WinPE optional components that ship with the ADK so the build process can add PowerShell support to `boot.wim`
 - elevated session when running ADK and DISM-dependent operations
 - Deployment and Imaging Tools Environment for `copype.cmd` and `MakeWinPEMedia`
 
