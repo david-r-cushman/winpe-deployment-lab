@@ -126,10 +126,10 @@ function Get-WinPEOptionalComponentPath {
     [CmdletBinding()]
     param()
 
-    $kitsRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10"
+    $kitsRoot = Join-Path -Path ${env:ProgramFiles(x86)} -ChildPath "Windows Kits\10"
     $candidates = @(
-        Join-Path $kitsRoot "Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs",
-        Join-Path $kitsRoot "Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs"
+        (Join-Path -Path $kitsRoot -ChildPath "Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs"),
+        (Join-Path -Path $kitsRoot -ChildPath "Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs")
     )
 
     foreach ($candidate in $candidates) {

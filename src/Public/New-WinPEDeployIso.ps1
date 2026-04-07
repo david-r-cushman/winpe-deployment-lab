@@ -60,30 +60,33 @@ function New-WinPEDeployIso {
 `$ErrorActionPreference = 'Stop'
 
 function Get-IsoDrive {
-    foreach (`$drive in 'D'..'Z') {
-        if (Test-Path -LiteralPath ("" + `$drive + ':\Deploy\Unattend.xml')) {
-            return "" + `$drive + ':'
-        }
+    `$drive = Get-PSDrive -PSProvider FileSystem |
+        ForEach-Object { `$_.Root.TrimEnd('\') } |
+        Where-Object { Test-Path -LiteralPath "`$_\Deploy\Unattend.xml" } |
+        Select-Object -First 1
+
+    if (`$drive) {
+        return `$drive
     }
 
     throw 'Could not locate ISO drive.'
 }
 
 `$isoDrive = Get-IsoDrive
-Write-Host ""[SUCCESS] ISO mounted as: `$isoDrive""
+Write-Host "[SUCCESS] ISO mounted as: `$isoDrive"
 
-& diskpart /s ""`$isoDrive\Deploy\Diskconfig.txt""
+& diskpart /s "`$isoDrive\Deploy\Diskconfig.txt"
 
-`$wimFile = ""`$isoDrive\Deploy\$wimName""
+`$wimFile = "`$isoDrive\Deploy\$wimName"
 if (-not (Test-Path -LiteralPath `$wimFile)) {
-    throw ""WIM file not found: `$wimFile""
+    throw "WIM file not found: `$wimFile"
 }
 
-Write-Host ""[SUCCESS] WIM file resolved: `$wimFile""
+Write-Host "[SUCCESS] WIM file resolved: `$wimFile"
 
 & dism /apply-image /imagefile:`$wimFile /index:1 /applydir:C:\
 & bcdboot C:\Windows /s S: /f UEFI
-Copy-Item -LiteralPath ""`$isoDrive\Deploy\Unattend.xml"" -Destination 'C:\Windows\Panther\Unattend.xml' -Force
+Copy-Item -LiteralPath "`$isoDrive\Deploy\Unattend.xml" -Destination 'C:\Windows\Panther\Unattend.xml' -Force
 & wpeutil shutdown
 "@
     Set-Content -Path (Join-Path $deployFolder "Deploy.ps1") -Value $deployScript
