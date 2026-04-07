@@ -33,30 +33,70 @@ function New-WinPECaptureIso {
     Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath
     Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
 
+    Enable-WinPEPowerShellSupport -MountPath $mountPath
+
+    $captureScript = @"
+`$ErrorActionPreference = 'Stop'
+
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory)]
+        [string]`$FilePath,
+
+        [Parameter()]
+        [string[]]`$ArgumentList = @(),
+
+        [Parameter(Mandatory)]
+        [string]`$Description
+    )
+
+    Write-Host "[INFO] `$Description"
+    & `$FilePath @ArgumentList
+
+    if (`$LASTEXITCODE -ne 0) {
+        throw "`$Description failed with exit code `$LASTEXITCODE."
+    }
+}
+
+Invoke-NativeCommand -FilePath 'wpeutil' -ArgumentList @('UpdateBootInfo') -Description 'Refreshing WinPE boot information'
+
+if (-not (Test-Path -LiteralPath 'C:\')) {
+    Write-Host '[INFO] C: not assigned. Running diskpart...'
+    Invoke-NativeCommand -FilePath 'diskpart' -ArgumentList @('/s', 'X:\Windows\System32\assign-c.txt') -Description 'Assigning C: drive'
+}
+else {
+    Write-Host '[SUCCESS] C: is already assigned.'
+}
+
+`$capturePath = '$captureLocation'
+if (-not (Test-Path -LiteralPath `$capturePath)) {
+    New-Item -Path `$capturePath -ItemType Directory -Force | Out-Null
+    Write-Host "[SUCCESS] Created capture folder: `$capturePath"
+}
+else {
+    Write-Host "[SUCCESS] Capture folder already present: `$capturePath"
+}
+
+`$imagePath = Join-Path `$capturePath '$wimName'
+Invoke-NativeCommand -FilePath 'dism' -ArgumentList @(
+    '/Capture-Image',
+    "/ImageFile:`$imagePath",
+    '/CaptureDir:C:\',
+    '/Name:$wimName',
+    '/Description:$imageDescription',
+    '/Compress:Max',
+    '/CheckIntegrity'
+) -Description 'Capturing reference image'
+"@
+
+    Set-Content -Path (Join-Path $mountPath "Capture.ps1") -Value $captureScript
+    Write-WorkspaceLog "Copied Capture.ps1 into boot.wim" -Level SUCCESS
+
     $startnet = @"
-wpeinit
 @echo off
-wpeutil UpdateBootInfo
-
-set CAPTUREPATH=$captureLocation
-
-REM Check if C: is assigned
-dir C:\ >nul 2>&1
-if errorlevel 1 (
-    echo C: not assigned. Running diskpart...
-    diskpart /s assign-c.txt
-) else (
-    echo C: is already assigned.
-)
-
-REM Create capture folder if needed
-if not exist %CAPTUREPATH% (
-    echo Creating %CAPTUREPATH%...
-    md %CAPTUREPATH%
-)
-
-REM Run capture
-dism /Capture-Image /ImageFile:%CAPTUREPATH%\$wimName /CaptureDir:C:\ /Name:"$wimName" /Description:"$imageDescription" /Compress:Max /CheckIntegrity
+REM WinPE Capture Bootstrap
+wpeinit
+X:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File X:\Capture.ps1
 "@
 
     Set-Content "$mountPath\Windows\System32\startnet.cmd" $startnet
