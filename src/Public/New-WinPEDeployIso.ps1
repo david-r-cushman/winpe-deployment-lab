@@ -56,51 +56,38 @@ function New-WinPEDeployIso {
     Copy-Item -Path $wimPath -Destination $deployFolder -Force
     Write-WorkspaceLog "Copied captured WIM into Deploy folder: $wimName" -Level SUCCESS
 
-    $deployCmd = @"
-@echo off
-setlocal enabledelayedexpansion
+    $deployScript = @"
+`$ErrorActionPreference = 'Stop'
 
-REM Search for the ISO drive by looking for Deploy.cmd
-for %%i in (D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-  if exist %%i:\Deploy\Unattend.xml (
-    set ISODRIVE=%%i:
-    goto :found
-  )
-)
+function Get-IsoDrive {
+    foreach (`$drive in 'D'..'Z') {
+        if (Test-Path -LiteralPath ("" + `$drive + ':\Deploy\Unattend.xml')) {
+            return "" + `$drive + ':'
+        }
+    }
 
-echo [ERROR] Could not locate ISO drive. Aborting.
-exit /b 1
+    throw 'Could not locate ISO drive.'
+}
 
-:found
-echo [SUCCESS] ISO mounted as: %ISODRIVE%
+`$isoDrive = Get-IsoDrive
+Write-Host ""[SUCCESS] ISO mounted as: `$isoDrive""
 
-REM Partition disk
-diskpart /s %ISODRIVE%\Deploy\Diskconfig.txt
+& diskpart /s ""`$isoDrive\Deploy\Diskconfig.txt""
 
-REM Resolve WIM file
-set WIMFILE=%ISODRIVE%\Deploy\$wimName
+`$wimFile = ""`$isoDrive\Deploy\$wimName""
+if (-not (Test-Path -LiteralPath `$wimFile)) {
+    throw ""WIM file not found: `$wimFile""
+}
 
-if not exist %WIMFILE% (
-    echo [ERROR] WIM file not found: %WIMFILE%
-    exit /b 1
-)
+Write-Host ""[SUCCESS] WIM file resolved: `$wimFile""
 
-echo [SUCCESS] WIM file resolved: %WIMFILE%
-
-REM Apply image
-dism /apply-image /imagefile:%WIMFILE% /index:1 /applydir:C:\
-
-REM Configure boot
-bcdboot C:\Windows /s S: /f UEFI
-
-REM Inject Unattend.xml
-copy %ISODRIVE%\Deploy\Unattend.xml C:\Windows\Panther\Unattend.xml
-
-REM Shutdown
-wpeutil shutdown
+& dism /apply-image /imagefile:`$wimFile /index:1 /applydir:C:\
+& bcdboot C:\Windows /s S: /f UEFI
+Copy-Item -LiteralPath ""`$isoDrive\Deploy\Unattend.xml"" -Destination 'C:\Windows\Panther\Unattend.xml' -Force
+& wpeutil shutdown
 "@
-    Set-Content -Path (Join-Path $deployFolder "Deploy.cmd") -Value $deployCmd
-    Write-WorkspaceLog "Generated Deploy.cmd in Deploy folder" -Level SUCCESS
+    Set-Content -Path (Join-Path $deployFolder "Deploy.ps1") -Value $deployScript
+    Write-WorkspaceLog "Generated Deploy.ps1 in Deploy folder" -Level SUCCESS
 
     $bootWim = Join-Path "$winPEWorkDir\Media\sources" "boot.wim"
     $mountPath = $context.Paths.DeployMountRoot
@@ -108,28 +95,21 @@ wpeutil shutdown
     Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath
     Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
 
+    Enable-WinPEPowerShellSupport -MountPath $mountPath
+
     $startnet = @"
 @echo off
 REM WinPE Deployment Bootstrap
-setlocal enabledelayedexpansion
-
-REM Locate ISO drive and call Deploy.cmd
-for %%i in (D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-  if exist %%i:\Deploy\Deploy.cmd (
-    set ISODRIVE=%%i:
-    goto :found
-  )
-)
-
-echo [ERROR] Could not locate ISO drive. Aborting.
-exit /b 1
-
-:found
-echo [SUCCESS] ISO mounted as: %ISODRIVE%
-call %ISODRIVE%\Deploy\Deploy.cmd
+wpeinit
+X:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File X:\Deploy\Deploy.ps1
 "@
     Set-Content "$mountPath\Windows\System32\startnet.cmd" $startnet
     Write-WorkspaceLog "Injected custom startnet.cmd into boot.wim" -Level SUCCESS
+
+    $deployScriptInBootImagePath = Join-Path $mountPath "Deploy\Deploy.ps1"
+    New-Item -Path (Split-Path $deployScriptInBootImagePath -Parent) -ItemType Directory -Force | Out-Null
+    Copy-Item -Path (Join-Path $deployFolder "Deploy.ps1") -Destination $deployScriptInBootImagePath -Force
+    Write-WorkspaceLog "Copied Deploy.ps1 into boot.wim" -Level SUCCESS
 
     Dismount-WindowsImage -Path $mountPath -Save
     Write-WorkspaceLog "Dismounted boot.wim and saved changes" -Level SUCCESS

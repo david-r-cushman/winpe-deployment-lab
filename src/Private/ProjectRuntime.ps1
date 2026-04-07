@@ -122,6 +122,63 @@ function Assert-AdkEnvironment {
     }
 }
 
+function Get-WinPEOptionalComponentPath {
+    [CmdletBinding()]
+    param()
+
+    $kitsRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10"
+    $candidates = @(
+        Join-Path $kitsRoot "Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs",
+        Join-Path $kitsRoot "Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs"
+    )
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+
+    throw "WinPE optional components path not found under '$kitsRoot'. Ensure the Windows ADK WinPE add-on is installed."
+}
+
+function Enable-WinPEPowerShellSupport {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$MountPath,
+
+        [Parameter()]
+        [string]$Culture = "en-us"
+    )
+
+    $ocRoot = Get-WinPEOptionalComponentPath
+    $packages = @(
+        "WinPE-WMI",
+        "WinPE-NetFX",
+        "WinPE-Scripting",
+        "WinPE-PowerShell",
+        "WinPE-StorageWMI",
+        "WinPE-DismCmdlets"
+    )
+
+    foreach ($package in $packages) {
+        $packagePath = Join-Path $ocRoot "$package.cab"
+        $languagePackagePath = Join-Path $ocRoot "$Culture\$package`_$Culture.cab"
+
+        if (-not (Test-Path -LiteralPath $packagePath)) {
+            throw "Required WinPE package not found: $packagePath"
+        }
+
+        if (-not (Test-Path -LiteralPath $languagePackagePath)) {
+            throw "Required WinPE language package not found: $languagePackagePath"
+        }
+
+        Add-WindowsPackage -Path $MountPath -PackagePath $packagePath | Out-Null
+        Add-WindowsPackage -Path $MountPath -PackagePath $languagePackagePath | Out-Null
+        Write-WorkspaceLog "Added WinPE package: $package" -Level SUCCESS
+    }
+}
+
 function Remove-ItemIfPresent {
     [CmdletBinding()]
     param(
