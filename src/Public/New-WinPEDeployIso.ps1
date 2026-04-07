@@ -59,6 +59,26 @@ function New-WinPEDeployIso {
     $deployScript = @"
 `$ErrorActionPreference = 'Stop'
 
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory = `$true)]
+        [string]`$FilePath,
+
+        [Parameter()]
+        [string[]]`$ArgumentList = @(),
+
+        [Parameter(Mandatory = `$true)]
+        [string]`$Description
+    )
+
+    Write-Host "[INFO] `$Description"
+    & `$FilePath @ArgumentList
+
+    if (`$LASTEXITCODE -ne 0) {
+        throw "`$Description failed with exit code `$LASTEXITCODE."
+    }
+}
+
 function Get-IsoDrive {
     `$drive = Get-PSDrive -PSProvider FileSystem |
         ForEach-Object { `$_.Root.TrimEnd('\') } |
@@ -75,8 +95,6 @@ function Get-IsoDrive {
 `$isoDrive = Get-IsoDrive
 Write-Host "[SUCCESS] ISO mounted as: `$isoDrive"
 
-& diskpart /s "`$isoDrive\Deploy\Diskconfig.txt"
-
 `$wimFile = "`$isoDrive\Deploy\$wimName"
 if (-not (Test-Path -LiteralPath `$wimFile)) {
     throw "WIM file not found: `$wimFile"
@@ -84,10 +102,23 @@ if (-not (Test-Path -LiteralPath `$wimFile)) {
 
 Write-Host "[SUCCESS] WIM file resolved: `$wimFile"
 
-& dism /apply-image /imagefile:`$wimFile /index:1 /applydir:C:\
-& bcdboot C:\Windows /s S: /f UEFI
-Copy-Item -LiteralPath "`$isoDrive\Deploy\Unattend.xml" -Destination 'C:\Windows\Panther\Unattend.xml' -Force
-& wpeutil shutdown
+Invoke-NativeCommand -FilePath 'diskpart' -ArgumentList @('/s', "`$isoDrive\Deploy\Diskconfig.txt") -Description 'Partitioning disk'
+Invoke-NativeCommand -FilePath 'dism' -ArgumentList @('/apply-image', "/imagefile:`$wimFile", '/index:1', '/applydir:C:\') -Description 'Applying WIM image'
+Invoke-NativeCommand -FilePath 'bcdboot' -ArgumentList @('C:\Windows', '/s', 'S:', '/f', 'UEFI') -Description 'Configuring boot files'
+
+`$pantherPath = 'C:\Windows\Panther'
+`$unattendTarget = Join-Path `$pantherPath 'Unattend.xml'
+
+if (-not (Test-Path -LiteralPath `$pantherPath)) {
+    New-Item -Path `$pantherPath -ItemType Directory -Force | Out-Null
+}
+
+Copy-Item -LiteralPath "`$isoDrive\Deploy\Unattend.xml" -Destination `$unattendTarget -Force
+& attrib -R -S -H `$unattendTarget
+& icacls `$unattendTarget /inheritance:e | Out-Null
+Write-Host '[SUCCESS] Copied Unattend.xml into C:\Windows\Panther'
+
+Invoke-NativeCommand -FilePath 'wpeutil' -ArgumentList @('shutdown') -Description 'Shutting down WinPE'
 "@
     Set-Content -Path (Join-Path $deployFolder "Deploy.ps1") -Value $deployScript
     Write-WorkspaceLog "Generated Deploy.ps1 in Deploy folder" -Level SUCCESS
