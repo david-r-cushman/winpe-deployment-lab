@@ -16,8 +16,8 @@
       * All subsequent events are appended directly to the log file.
 
     The resulting ISO launches PowerShell in WinPE, automates disk partitioning, applies
-    the captured WIM to C:\, configures boot files, injects Unattend.xml, and shuts down
-    the VM.
+    the captured WIM to C:\, configures boot files, injects Unattend.xml, stages a
+    post-deploy bootstrap under C:\Windows\Setup\Scripts, and shuts down the VM.
 
 .PARAMETER None
     All configuration is driven by the checked-in config\osd-config.json file.

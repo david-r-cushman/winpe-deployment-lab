@@ -13,6 +13,7 @@ The goal is to show practical endpoint engineering skills through:
 - WinPE boot media creation
 - offline WIM maintenance
 - unattended deployment payload preparation
+- post-deployment software installation
 - repository-driven automation and repeatable project structure
 
 ## Workflow Model
@@ -36,7 +37,7 @@ WinPE now boots into a PowerShell-enabled runtime. The generated media still use
 ## Repository Layout
 
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
-- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.Template.xml`, `Diskconfig.txt`, and `Assign-C.txt`
+- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.Template.xml`, `Diskconfig.txt`, `Assign-C.txt`, and post-deploy bootstrap scripts
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
 - [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
 - [`src/Private`](src/Private): shared runtime helpers used by the script entry points
@@ -110,6 +111,8 @@ PowerShell.exe .\New-WinPEDeployISO.ps1
 
 Builds a PowerShell-enabled deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Deploy.ps1` payload inside WinPE.
 
+The current deployment payload also stages a post-deploy bootstrap under `C:\Windows\Setup\Scripts`. `SetupComplete.cmd` registers a one-time `RunOnce` launch for `PostDeploy.ps1`, which is currently used to install PowerShell 7.6 after the first automatic logon.
+
 ## Prerequisites
 
 - Windows
@@ -118,6 +121,7 @@ Builds a PowerShell-enabled deployment ISO in [`Build/ISO`](Build/ISO) using the
 - WinPE optional components that ship with the ADK so the build process can add PowerShell support to `boot.wim`
 - elevated session when running ADK and DISM-dependent operations
 - Deployment and Imaging Tools Environment for `copype.cmd` and `MakeWinPEMedia`
+- outbound internet access from the deployed VM if you want the bundled post-deploy PowerShell 7 installer bootstrap to succeed
 
 ## Security Notes
 
