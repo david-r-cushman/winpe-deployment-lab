@@ -15,7 +15,7 @@ function Update-WinPEWimImage {
     $wimPath = Join-Path $context.Paths.WimRoot $wimName
     $mountPath = $context.Paths.WimMountRoot
 
-    if (-not (Test-Path $wimPath)) {
+    if (-not (Test-Path -LiteralPath $wimPath)) {
         throw "Expected WIM file not found: $wimPath. Ensure the captured image exists in Build\WIM."
     }
     Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS
@@ -31,41 +31,53 @@ function Update-WinPEWimImage {
         throw "WIM integrity check failed: $($_.Exception.Message)"
     }
 
-    if (-not (Test-Path $mountPath)) {
+    if (-not (Test-Path -LiteralPath $mountPath)) {
         New-Item -Path $mountPath -ItemType Directory -Force | Out-Null
         Write-WorkspaceLog "Created mount path: $mountPath" -Level SUCCESS
     }
 
+    $wimMounted = $false
+    $saveChanges = $false
+
     try {
         Mount-WindowsImage -ImagePath $wimPath -Index 1 -Path $mountPath -ErrorAction Stop
+        $wimMounted = $true
         Write-WorkspaceLog "Mounted WIM at $mountPath" -Level SUCCESS
-    }
-    catch {
-        throw "Failed to mount WIM: $($_.Exception.Message)"
-    }
 
-    $capturedImagesPath = Join-Path $mountPath "CapturedImages"
-    if (Test-Path $capturedImagesPath) {
-        try {
-            Remove-Item -Path $capturedImagesPath -Recurse -Force -ErrorAction Stop
-            Write-WorkspaceLog "Removed offline folder: C:\CapturedImages" -Level SUCCESS
+        $capturedImagesPath = Join-Path $mountPath 'CapturedImages'
+        if (Test-Path -LiteralPath $capturedImagesPath) {
+            try {
+                Remove-Item -LiteralPath $capturedImagesPath -Recurse -Force -ErrorAction Stop
+                Write-WorkspaceLog 'Removed offline folder: C:\CapturedImages' -Level SUCCESS
+            }
+            catch {
+                Write-WorkspaceLog "Failed to remove offline folder: $($_.Exception.Message)" -Level ERROR
+                throw
+            }
         }
-        catch {
-            Write-WorkspaceLog "Failed to remove offline folder: $($_.Exception.Message)" -Level ERROR
-            throw
+        else {
+            Write-WorkspaceLog 'Offline folder not present: C:\CapturedImages' -Level INFO
+        }
+
+        $saveChanges = $true
+    }
+    finally {
+        if ($wimMounted) {
+            try {
+                if ($saveChanges) {
+                    Dismount-WindowsImage -Path $mountPath -Save -ErrorAction Stop
+                    Write-WorkspaceLog 'Dismounted WIM and saved changes' -Level SUCCESS
+                }
+                else {
+                    Dismount-WindowsImage -Path $mountPath -Discard -ErrorAction Stop
+                    Write-WorkspaceLog 'Dismounted WIM and discarded changes after a failure' -Level WARNING
+                }
+            }
+            catch {
+                throw "Failed to dismount WIM: $($_.Exception.Message)"
+            }
         }
     }
-    else {
-        Write-WorkspaceLog "Offline folder not present: C:\CapturedImages" -Level INFO
-    }
 
-    try {
-        Dismount-WindowsImage -Path $mountPath -Save -ErrorAction Stop
-        Write-WorkspaceLog "Dismounted WIM and saved changes" -Level SUCCESS
-    }
-    catch {
-        throw "Failed to dismount WIM: $($_.Exception.Message)"
-    }
-
-    Write-WorkspaceLog "Maintain-WIMImage.ps1 steps complete. Offline maintenance applied successfully." -Level SUCCESS
+    Write-WorkspaceLog 'Maintain-WIMImage.ps1 steps complete. Offline maintenance applied successfully.' -Level SUCCESS
 }

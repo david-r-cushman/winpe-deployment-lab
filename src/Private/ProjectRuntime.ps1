@@ -12,11 +12,11 @@ function Get-WinPEProjectContext {
 
     $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
     $requiredProperties = @(
-        "BootISOName",
-        "WIMName",
-        "DeployISOName",
-        "ImageDescription",
-        "CaptureLocation"
+        'BootISOName',
+        'WIMName',
+        'DeployISOName',
+        'ImageDescription',
+        'CaptureLocation'
     )
 
     foreach ($property in $requiredProperties) {
@@ -26,18 +26,18 @@ function Get-WinPEProjectContext {
     }
 
     $paths = [pscustomobject]@{
-        BuildRoot           = Join-Path $ProjectRoot "Build"
-        IsoRoot             = Join-Path $ProjectRoot "Build\ISO"
-        WimRoot             = Join-Path $ProjectRoot "Build\WIM"
-        LogRoot             = Join-Path $ProjectRoot "Build\Logs"
-        MountRoot           = Join-Path $ProjectRoot "Build\Mount"
-        CaptureMountRoot    = Join-Path $ProjectRoot "Build\Mount\Capture"
-        DeployMountRoot     = Join-Path $ProjectRoot "Build\Mount\Deploy"
-        WimMountRoot        = Join-Path $ProjectRoot "Build\Mount\WIM"
-        WinPERoot           = Join-Path $ProjectRoot "Build\WinPE"
-        CaptureWorkRoot     = Join-Path $ProjectRoot "Build\WinPE\Capture"
-        DeployWorkRoot      = Join-Path $ProjectRoot "Build\WinPE\Deploy"
-        PayloadTemplateRoot = Join-Path $ProjectRoot "PayloadTemplates"
+        BuildRoot           = Join-Path $ProjectRoot 'Build'
+        IsoRoot             = Join-Path $ProjectRoot 'Build\ISO'
+        WimRoot             = Join-Path $ProjectRoot 'Build\WIM'
+        LogRoot             = Join-Path $ProjectRoot 'Build\Logs'
+        MountRoot           = Join-Path $ProjectRoot 'Build\Mount'
+        CaptureMountRoot    = Join-Path $ProjectRoot 'Build\Mount\Capture'
+        DeployMountRoot     = Join-Path $ProjectRoot 'Build\Mount\Deploy'
+        WimMountRoot        = Join-Path $ProjectRoot 'Build\Mount\WIM'
+        WinPERoot           = Join-Path $ProjectRoot 'Build\WinPE'
+        CaptureWorkRoot     = Join-Path $ProjectRoot 'Build\WinPE\Capture'
+        DeployWorkRoot      = Join-Path $ProjectRoot 'Build\WinPE\Deploy'
+        PayloadTemplateRoot = Join-Path $ProjectRoot 'PayloadTemplates'
     }
 
     [pscustomobject]@{
@@ -69,7 +69,12 @@ function Initialize-WinPEProjectRuntime {
 
     foreach ($path in $requiredPaths) {
         if (-not (Test-Path -LiteralPath $path)) {
-            New-Item -Path $path -ItemType Directory -Force | Out-Null
+            try {
+                New-Item -Path $path -ItemType Directory -Force -ErrorAction Stop | Out-Null
+            }
+            catch {
+                throw "Failed to create required project directory at '$path'. $($_.Exception.Message)"
+            }
         }
     }
 
@@ -85,8 +90,8 @@ function Initialize-UnattendWorkingCopy {
         [psobject]$Context
     )
 
-    $templatePath = Join-Path $Context.Paths.PayloadTemplateRoot "Unattend.Template.xml"
-    $workingPath = Join-Path $Context.Paths.PayloadTemplateRoot "Unattend.xml"
+    $templatePath = Join-Path $Context.Paths.PayloadTemplateRoot 'Unattend.Template.xml'
+    $workingPath = Join-Path $Context.Paths.PayloadTemplateRoot 'Unattend.xml'
 
     if (-not (Test-Path -LiteralPath $templatePath)) {
         throw "Unattend template not found at '$templatePath'."
@@ -109,7 +114,7 @@ function Assert-AdministratorSession {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = [Security.Principal.WindowsPrincipal]::new($identity)
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        throw "This script must be run as Administrator."
+        throw 'This script must be run as Administrator.'
     }
 }
 
@@ -117,8 +122,8 @@ function Assert-AdkEnvironment {
     [CmdletBinding()]
     param()
 
-    if (-not (Get-Command "copype.cmd" -ErrorAction SilentlyContinue)) {
-        throw "copype.cmd not found. Run from the Deployment and Imaging Tools Environment shell provided by the Windows ADK."
+    if (-not (Get-Command 'copype.cmd' -ErrorAction SilentlyContinue)) {
+        throw 'copype.cmd not found. Run from the Deployment and Imaging Tools Environment shell provided by the Windows ADK.'
     }
 }
 
@@ -126,10 +131,10 @@ function Get-WinPEOptionalComponentPath {
     [CmdletBinding()]
     param()
 
-    $kitsRoot = Join-Path -Path ${env:ProgramFiles(x86)} -ChildPath "Windows Kits\10"
+    $kitsRoot = Join-Path -Path ${env:ProgramFiles(x86)} -ChildPath 'Windows Kits\10'
     $candidates = @(
-        (Join-Path -Path $kitsRoot -ChildPath "Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs"),
-        (Join-Path -Path $kitsRoot -ChildPath "Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs")
+        (Join-Path -Path $kitsRoot -ChildPath 'Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs'),
+        (Join-Path -Path $kitsRoot -ChildPath 'Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs')
     )
 
     foreach ($candidate in $candidates) {
@@ -148,17 +153,17 @@ function Enable-WinPEPowerShellSupport {
         [string]$MountPath,
 
         [Parameter()]
-        [string]$Culture = "en-us"
+        [string]$Culture = 'en-us'
     )
 
     $ocRoot = Get-WinPEOptionalComponentPath
     $packages = @(
-        "WinPE-WMI",
-        "WinPE-NetFX",
-        "WinPE-Scripting",
-        "WinPE-PowerShell",
-        "WinPE-StorageWMI",
-        "WinPE-DismCmdlets"
+        'WinPE-WMI',
+        'WinPE-NetFX',
+        'WinPE-Scripting',
+        'WinPE-PowerShell',
+        'WinPE-StorageWMI',
+        'WinPE-DismCmdlets'
     )
 
     foreach ($package in $packages) {

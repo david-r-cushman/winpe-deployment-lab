@@ -38,6 +38,37 @@
 if (-not $Global:WorkspaceLogBuffer) { $Global:WorkspaceLogBuffer = @() }
 $Global:WorkspaceLogPath = $null
 
+function Write-FileUtf8NoBom {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+
+        [Parameter(Mandatory)]
+        [string[]]$Lines,
+
+        [Parameter()]
+        [switch]$Append
+    )
+
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    $mode = if ($Append) { [System.IO.FileMode]::Append } else { [System.IO.FileMode]::Create }
+    $stream = [System.IO.FileStream]::new($Path, $mode, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+    try {
+        $writer = [System.IO.StreamWriter]::new($stream, $encoding)
+        try {
+            foreach ($line in $Lines) {
+                $writer.WriteLine($line)
+            }
+        }
+        finally {
+            $writer.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 function Write-WorkspaceLog {
 <#
 .SYNOPSIS
@@ -65,7 +96,9 @@ function Write-WorkspaceLog {
 #>
 
     param(
+        [Parameter(Mandatory)]
         [string]$Message,
+
         [ValidateSet('INFO','SUCCESS','WARNING','ERROR')]
         [string]$Level = 'INFO'
     )
@@ -88,11 +121,12 @@ function Write-WorkspaceLog {
     else {
         # Flush buffer if needed
         if ($Global:WorkspaceLogBuffer.Count -gt 0) {
-            $Global:WorkspaceLogBuffer | Out-File -FilePath $Global:WorkspaceLogPath -Append -Encoding UTF8NoBOM
+            Write-FileUtf8NoBom -Path $Global:WorkspaceLogPath -Lines $Global:WorkspaceLogBuffer -Append
             $Global:WorkspaceLogBuffer = @()
         }
+
         # Append new entry
-        Add-Content -Path $Global:WorkspaceLogPath -Value $logEntry
+        Write-FileUtf8NoBom -Path $Global:WorkspaceLogPath -Lines @($logEntry) -Append
     }
 }
 
@@ -148,7 +182,7 @@ function Initialize-WorkspaceLogging {
 
         # Flush any buffered messages
         if ($Global:WorkspaceLogBuffer.Count -gt 0) {
-            $Global:WorkspaceLogBuffer | Out-File -FilePath $Global:WorkspaceLogPath -Encoding UTF8NoBOM -ErrorAction Stop
+            Write-FileUtf8NoBom -Path $Global:WorkspaceLogPath -Lines $Global:WorkspaceLogBuffer
             $Global:WorkspaceLogBuffer = @()
         }
     }
