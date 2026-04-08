@@ -20,7 +20,7 @@ function Initialize-WinPEProject {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [string]$ProjectRoot = $PSScriptRoot
+        [string]$ProjectRoot = (Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent)
     )
 
     $context = Get-WinPEProjectContext -ProjectRoot $ProjectRoot
