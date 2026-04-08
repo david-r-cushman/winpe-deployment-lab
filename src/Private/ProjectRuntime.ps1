@@ -209,17 +209,61 @@ function Invoke-ExternalTool {
         [string]$Description
     )
 
-    $output = & $FilePath @ArgumentList 2>&1
-    $exitCode = $LASTEXITCODE
+    $resolvedCommand = (Get-Command -Name $FilePath -ErrorAction Stop).Source
+    $stdoutPath = [System.IO.Path]::GetTempFileName()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
 
-    if ($exitCode -ne 0) {
-        $outputText = ($output | Out-String).Trim()
-        if ([string]::IsNullOrWhiteSpace($outputText)) {
-            throw "$Description failed with exit code $exitCode."
+    try {
+        $process = if ([System.IO.Path]::GetExtension($resolvedCommand) -in @('.cmd', '.bat')) {
+            $quotedCommand = '"' + $resolvedCommand + '"'
+            $quotedArguments = foreach ($argument in $ArgumentList) {
+                if ($argument -match '[\s"]') {
+                    '"' + ($argument -replace '"', '\"') + '"'
+                }
+                else {
+                    $argument
+                }
+            }
+
+            Start-Process -FilePath $env:ComSpec `
+                -ArgumentList @('/c', "$quotedCommand $($quotedArguments -join ' ')") `
+                -Wait -PassThru -NoNewWindow `
+                -RedirectStandardOutput $stdoutPath `
+                -RedirectStandardError $stderrPath
+        }
+        else {
+            Start-Process -FilePath $resolvedCommand `
+                -ArgumentList $ArgumentList `
+                -Wait -PassThru -NoNewWindow `
+                -RedirectStandardOutput $stdoutPath `
+                -RedirectStandardError $stderrPath
         }
 
-        throw "$Description failed with exit code $exitCode. Output: $outputText"
-    }
+        $output = @()
+        if (Test-Path -LiteralPath $stdoutPath) {
+            $output += Get-Content -LiteralPath $stdoutPath
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            $output += Get-Content -LiteralPath $stderrPath
+        }
 
-    return $output
+        if ($process.ExitCode -ne 0) {
+            $outputText = ($output | Out-String).Trim()
+            if ([string]::IsNullOrWhiteSpace($outputText)) {
+                throw "$Description failed with exit code $($process.ExitCode)."
+            }
+
+            throw "$Description failed with exit code $($process.ExitCode). Output: $outputText"
+        }
+
+        return $output
+    }
+    finally {
+        if (Test-Path -LiteralPath $stdoutPath) {
+            Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
