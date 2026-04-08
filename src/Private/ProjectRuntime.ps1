@@ -10,7 +10,12 @@ function Get-WinPEProjectContext {
         throw "Project configuration file not found at '$configPath'."
     }
 
-    $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+    try {
+        $config = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        throw "Failed to read or parse project configuration at '$configPath'. $($_.Exception.Message)"
+    }
     $requiredProperties = @(
         'BootISOName',
         'WIMName',

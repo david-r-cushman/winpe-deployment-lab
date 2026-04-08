@@ -184,7 +184,7 @@ function Initialize-WorkspaceLogging {
 
         # Flush any buffered messages
         if ($Global:WorkspaceLogBuffer.Count -gt 0) {
-            Write-FileUtf8NoBom -Path $Global:WorkspaceLogPath -Lines $Global:WorkspaceLogBuffer
+            Write-FileUtf8NoBom -Path $Global:WorkspaceLogPath -Lines $Global:WorkspaceLogBuffer -Append
             $Global:WorkspaceLogBuffer = @()
         }
     }
