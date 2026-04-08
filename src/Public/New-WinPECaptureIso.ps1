@@ -24,16 +24,11 @@ function New-WinPECaptureIso {
         Remove-ItemIfPresent -Path $winPEWorkDir
     }
 
-    copype.cmd amd64 $winPEWorkDir
+    Invoke-ExternalTool -FilePath 'copype.cmd' -ArgumentList @('amd64', $winPEWorkDir) -Description "copype.cmd failed while creating temporary WinPE build directory at '$winPEWorkDir'"
     Write-WorkspaceLog "Created temporary WinPE build directory at $winPEWorkDir" -Level SUCCESS
 
-    $bootWim = Join-Path "$winPEWorkDir\Media\sources" "boot.wim"
+    $bootWim = Join-Path "$winPEWorkDir\Media\sources" 'boot.wim'
     $mountPath = $context.Paths.CaptureMountRoot
-
-    Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath
-    Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
-
-    Enable-WinPEPowerShellSupport -MountPath $mountPath
 
     $captureScript = @"
 `$ErrorActionPreference = 'Stop'
@@ -89,34 +84,55 @@ Invoke-NativeCommand -FilePath 'dism' -ArgumentList @(
 ) -Description 'Capturing reference image'
 "@
 
-    Set-Content -Path (Join-Path $mountPath "Capture.ps1") -Value $captureScript
-    Write-WorkspaceLog "Copied Capture.ps1 into boot.wim" -Level SUCCESS
+    $bootWimMounted = $false
+    $saveBootWimChanges = $false
+    try {
+        Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath -ErrorAction Stop
+        $bootWimMounted = $true
+        Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
 
-    $startnet = @"
+        Enable-WinPEPowerShellSupport -MountPath $mountPath
+
+        Set-Content -Path (Join-Path $mountPath 'Capture.ps1') -Value $captureScript -Encoding ascii
+        Write-WorkspaceLog 'Copied Capture.ps1 into boot.wim' -Level SUCCESS
+
+        $startnet = @"
 @echo off
 REM WinPE Capture Bootstrap
 wpeinit
 X:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File X:\Capture.ps1
 "@
 
-    Set-Content "$mountPath\Windows\System32\startnet.cmd" $startnet
-    Write-WorkspaceLog "Injected custom startnet.cmd into boot.wim" -Level SUCCESS
+        Set-Content -Path "$mountPath\Windows\System32\startnet.cmd" -Value $startnet -Encoding ascii
+        Write-WorkspaceLog 'Injected custom startnet.cmd into boot.wim' -Level SUCCESS
 
-    $assignSource = Join-Path $context.Paths.PayloadTemplateRoot "Assign-C.txt"
-    $assignDest = Join-Path $mountPath "Windows\System32\assign-c.txt"
+        $assignSource = Join-Path $context.Paths.PayloadTemplateRoot 'Assign-C.txt'
+        $assignDest = Join-Path $mountPath 'Windows\System32\assign-c.txt'
 
-    if (-not (Test-Path $assignSource)) {
-        throw "Required file missing: $assignSource"
+        if (-not (Test-Path $assignSource)) {
+            throw "Required file missing: $assignSource"
+        }
+
+        Copy-Item -Path $assignSource -Destination $assignDest -Force
+        Write-WorkspaceLog 'Copied assign-c.txt into boot.wim' -Level SUCCESS
+
+        $saveBootWimChanges = $true
+    }
+    finally {
+        if ($bootWimMounted) {
+            if ($saveBootWimChanges) {
+                Dismount-WindowsImage -Path $mountPath -Save -ErrorAction Stop
+                Write-WorkspaceLog 'Dismounted boot.wim and saved changes' -Level SUCCESS
+            }
+            else {
+                Dismount-WindowsImage -Path $mountPath -Discard -ErrorAction Stop
+                Write-WorkspaceLog 'Dismounted boot.wim and discarded changes after a failure' -Level WARNING
+            }
+        }
     }
 
-    Copy-Item -Path $assignSource -Destination $assignDest -Force
-    Write-WorkspaceLog "Copied assign-c.txt into boot.wim" -Level SUCCESS
-
-    Dismount-WindowsImage -Path $mountPath -Save
-    Write-WorkspaceLog "Dismounted boot.wim and saved changes" -Level SUCCESS
-
-    MakeWinPEMedia /ISO $winPEWorkDir $bootISOPath
+    Invoke-ExternalTool -FilePath 'MakeWinPEMedia' -ArgumentList @('/ISO', $winPEWorkDir, $bootISOPath) -Description "MakeWinPEMedia failed to create WinPE Capture ISO at '$bootISOPath'"
     Write-WorkspaceLog "WinPE ISO created: $bootISOPath" -Level SUCCESS
 
-    Write-WorkspaceLog "New-WinPECaptureISO.ps1 steps complete. WinPE-Capture.iso created successfully." -Level SUCCESS
+    Write-WorkspaceLog 'New-WinPECaptureISO.ps1 steps complete. WinPE-Capture.iso created successfully.' -Level SUCCESS
 }

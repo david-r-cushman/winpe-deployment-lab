@@ -66,19 +66,19 @@ function Write-WorkspaceLog {
 
     param(
         [string]$Message,
-        [ValidateSet("INFO","SUCCESS","WARNING","ERROR")]
-        [string]$Level = "INFO"
+        [ValidateSet('INFO','SUCCESS','WARNING','ERROR')]
+        [string]$Level = 'INFO'
     )
 
-    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
     $logEntry  = "[$timestamp] [$Level] $Message"
 
     # Always write to console
     switch ($Level) {
-        "SUCCESS" { Write-Host $logEntry -ForegroundColor Green }
-        "INFO"    { Write-Host $logEntry -ForegroundColor Cyan }
-        "WARNING" { Write-Warning $logEntry }
-        "ERROR"   { Write-Error $logEntry }
+        'SUCCESS' { Write-Host $logEntry -ForegroundColor Green }
+        'INFO'    { Write-Host $logEntry -ForegroundColor Cyan }
+        'WARNING' { Write-Warning $logEntry }
+        'ERROR'   { Write-Error $logEntry }
     }
 
     # If workspace log path is not yet set, buffer the message
@@ -128,21 +128,31 @@ function Initialize-WorkspaceLogging {
         [string]$LogRoot
     )
 
-    $logsFolder = if ($LogRoot) {
-        $LogRoot
-    }
-    else {
-        Join-Path $WorkspaceRoot "Logs"
-    }
-    if (-not (Test-Path $logsFolder)) {
-        New-Item -Path $logsFolder -ItemType Directory | Out-Null
+    if ([string]::IsNullOrWhiteSpace($WorkspaceRoot) -and [string]::IsNullOrWhiteSpace($LogRoot)) {
+        throw 'Initialize-WorkspaceLogging requires either WorkspaceRoot or LogRoot.'
     }
 
-    $Global:WorkspaceLogPath = Join-Path $logsFolder "Workspace.log"
+    try {
+        $logsFolder = if (-not [string]::IsNullOrWhiteSpace($LogRoot)) {
+            $LogRoot
+        }
+        else {
+            Join-Path -Path $WorkspaceRoot -ChildPath 'Logs'
+        }
 
-    # Flush any buffered messages
-    if ($Global:WorkspaceLogBuffer.Count -gt 0) {
-        $Global:WorkspaceLogBuffer | Out-File -FilePath $Global:WorkspaceLogPath -Encoding UTF8NoBOM
-        $Global:WorkspaceLogBuffer = @()
+        if (-not (Test-Path -LiteralPath $logsFolder)) {
+            New-Item -Path $logsFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
+        }
+
+        $Global:WorkspaceLogPath = Join-Path -Path $logsFolder -ChildPath 'Workspace.log'
+
+        # Flush any buffered messages
+        if ($Global:WorkspaceLogBuffer.Count -gt 0) {
+            $Global:WorkspaceLogBuffer | Out-File -FilePath $Global:WorkspaceLogPath -Encoding UTF8NoBOM -ErrorAction Stop
+            $Global:WorkspaceLogBuffer = @()
+        }
+    }
+    catch {
+        throw "Failed to initialize workspace logging. WorkspaceRoot='$WorkspaceRoot'; LogRoot='$LogRoot'. $($_.Exception.Message)"
     }
 }

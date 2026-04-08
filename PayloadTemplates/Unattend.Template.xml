@@ -29,5 +29,4 @@
             </UserAccounts>
         </component>
     </settings>
-    <cpi:offlineImage cpi:source="wim:d:/svr_2022_projectfiles/server2022_capture.wim#Server 2022 Customized Base Image" xmlns:cpi="urn:schemas-microsoft-com:cpi" />
 </unattend>

@@ -30,6 +30,6 @@ try {
     Initialize-WinPEProject -ProjectRoot $PSScriptRoot
 }
 catch {
-    Write-Warning "Project initialization failed: $($_.Exception.Message)"
+    Write-WorkspaceLog "Project initialization failed: $($_.Exception.Message)" -Level ERROR
     exit 1
 }

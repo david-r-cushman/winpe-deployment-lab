@@ -49,8 +49,14 @@ try {
     }
 
     Write-PostDeployLog "Downloading PowerShell MSI from $powerShellMsiUrl"
-    Invoke-WebRequest -Uri $powerShellMsiUrl -OutFile $installerPath
+    Invoke-WebRequest -Uri $powerShellMsiUrl -OutFile $installerPath -UseBasicParsing
     Write-PostDeployLog "Downloaded PowerShell MSI to $installerPath"
+
+    $signature = Get-AuthenticodeSignature -FilePath $installerPath
+    if ($signature.Status -ne 'Valid') {
+        throw "Downloaded PowerShell MSI signature validation failed with status '$($signature.Status)'."
+    }
+    Write-PostDeployLog "Verified Authenticode signature for $installerPath"
 
     Invoke-NativeCommand -FilePath 'msiexec.exe' -ArgumentList @(
         '/i',
