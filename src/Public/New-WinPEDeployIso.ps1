@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+    Builds a PowerShell-enabled WinPE deployment ISO.
+
+.DESCRIPTION
+    Validates the configured captured WIM, stages deployment payload files,
+    customizes boot.wim with WinPE PowerShell support and generated deployment
+    logic, and creates a deployment ISO under the repo-local Build structure.
+
+.PARAMETER ProjectRoot
+    The repository root for the WinPE project. Defaults to the current script root.
+
+.EXAMPLE
+    New-WinPEDeployIso -ProjectRoot 'E:\Git\winpe-deployment-lab'
+
+    Builds the deployment ISO using the current repo configuration and payload files.
+#>
 function New-WinPEDeployIso {
     [CmdletBinding()]
     param(

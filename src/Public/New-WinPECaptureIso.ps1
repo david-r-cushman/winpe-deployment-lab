@@ -1,3 +1,21 @@
+<#
+.SYNOPSIS
+    Builds a PowerShell-enabled WinPE capture ISO.
+
+.DESCRIPTION
+    Uses the current repo configuration to create a capture ISO, adds
+    WinPE PowerShell support to boot.wim, injects generated capture logic,
+    and prepares the ISO to capture a reference image to the configured
+    capture location.
+
+.PARAMETER ProjectRoot
+    The repository root for the WinPE project. Defaults to the current script root.
+
+.EXAMPLE
+    New-WinPECaptureIso -ProjectRoot 'E:\Git\winpe-deployment-lab'
+
+    Builds the capture ISO using the current repo configuration.
+#>
 function New-WinPECaptureIso {
     [CmdletBinding()]
     param(

@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+    Applies offline maintenance to the configured captured WIM.
+
+.DESCRIPTION
+    Validates and mounts the configured WIM from the repo-local Build\WIM
+    folder, applies the scripted maintenance step, and saves or discards
+    changes based on success.
+
+.PARAMETER ProjectRoot
+    The repository root for the WinPE project. Defaults to the current script root.
+
+.EXAMPLE
+    Update-WinPEWimImage -ProjectRoot 'E:\Git\winpe-deployment-lab'
+
+    Mounts the configured WIM, applies offline maintenance, and saves the image.
+#>
 function Update-WinPEWimImage {
     [CmdletBinding()]
     param(
