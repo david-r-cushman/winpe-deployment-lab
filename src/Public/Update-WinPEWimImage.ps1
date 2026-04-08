@@ -48,15 +48,11 @@ function Update-WinPEWimImage {
         throw "WIM integrity check failed: $($_.Exception.Message)"
     }
 
-    if (-not (Test-Path -LiteralPath $mountPath)) {
-        New-Item -Path $mountPath -ItemType Directory -Force | Out-Null
-        Write-WorkspaceLog "Created mount path: $mountPath" -Level SUCCESS
-    }
-
     $wimMounted = $false
     $saveChanges = $false
 
     try {
+        Prepare-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $wimPath -Index 1 -Path $mountPath -ErrorAction Stop
         $wimMounted = $true
         Write-WorkspaceLog "Mounted WIM at $mountPath" -Level SUCCESS

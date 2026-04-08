@@ -36,7 +36,9 @@
 
 # Global buffer for log messages
 if (-not $Global:WorkspaceLogBuffer) { $Global:WorkspaceLogBuffer = @() }
-$Global:WorkspaceLogPath = $null
+if (-not (Get-Variable -Scope Global -Name WorkspaceLogPath -ErrorAction SilentlyContinue)) {
+    $Global:WorkspaceLogPath = $null
+}
 
 function Write-FileUtf8NoBom {
     param(
@@ -111,7 +113,7 @@ function Write-WorkspaceLog {
         'SUCCESS' { Write-Host $logEntry -ForegroundColor Green }
         'INFO'    { Write-Host $logEntry -ForegroundColor Cyan }
         'WARNING' { Write-Warning $logEntry }
-        'ERROR'   { Write-Error $logEntry }
+        'ERROR'   { Write-Error -Message $logEntry -ErrorAction Continue }
     }
 
     # If workspace log path is not yet set, buffer the message

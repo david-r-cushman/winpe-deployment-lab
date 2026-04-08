@@ -105,6 +105,7 @@ Invoke-NativeCommand -FilePath 'dism' -ArgumentList @(
     $bootWimMounted = $false
     $saveBootWimChanges = $false
     try {
+        Prepare-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath -ErrorAction Stop
         $bootWimMounted = $true
         Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
@@ -127,7 +128,7 @@ X:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypas
         $assignSource = Join-Path $context.Paths.PayloadTemplateRoot 'Assign-C.txt'
         $assignDest = Join-Path $mountPath 'Windows\System32\assign-c.txt'
 
-        if (-not (Test-Path $assignSource)) {
+        if (-not (Test-Path -LiteralPath $assignSource)) {
             throw "Required file missing: $assignSource"
         }
 

@@ -178,8 +178,13 @@ function Enable-WinPEPowerShellSupport {
             throw "Required WinPE language package not found: $languagePackagePath"
         }
 
-        Add-WindowsPackage -Path $MountPath -PackagePath $packagePath | Out-Null
-        Add-WindowsPackage -Path $MountPath -PackagePath $languagePackagePath | Out-Null
+        try {
+            Add-WindowsPackage -Path $MountPath -PackagePath $packagePath -ErrorAction Stop | Out-Null
+            Add-WindowsPackage -Path $MountPath -PackagePath $languagePackagePath -ErrorAction Stop | Out-Null
+        }
+        catch {
+            throw "Failed to add WinPE package '$package' for mount path '$MountPath'. Package path: '$packagePath'. Language package path: '$languagePackagePath'. $($_.Exception.Message)"
+        }
         Write-WorkspaceLog "Added WinPE package: $package" -Level SUCCESS
     }
 }
@@ -192,7 +197,36 @@ function Remove-ItemIfPresent {
     )
 
     if (Test-Path -LiteralPath $Path) {
-        Remove-Item -LiteralPath $Path -Recurse -Force
+        try {
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+        }
+        catch {
+            throw "Failed to remove item at '$Path'. $($_.Exception.Message)"
+        }
+    }
+}
+
+function Prepare-MountDirectory {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        New-Item -Path $Path -ItemType Directory -Force -ErrorAction Stop | Out-Null
+    }
+
+    $existingItems = @(Get-ChildItem -LiteralPath $Path -Force -ErrorAction Stop)
+    if ($existingItems.Count -gt 0) {
+        try {
+            foreach ($item in $existingItems) {
+                Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction Stop
+            }
+        }
+        catch {
+            throw "Failed to prepare mount directory '$Path'. The directory must exist and be empty before mounting. $($_.Exception.Message)"
+        }
     }
 }
 
@@ -215,10 +249,10 @@ function Invoke-ExternalTool {
 
     try {
         $process = if ([System.IO.Path]::GetExtension($resolvedCommand) -in @('.cmd', '.bat')) {
-            $quotedCommand = '"' + $resolvedCommand + '"'
+            $quotedCommand = '"{0}"' -f $resolvedCommand
             $quotedArguments = foreach ($argument in $ArgumentList) {
                 if ($argument -match '[\s"]') {
-                    '"' + ($argument -replace '"', '\"') + '"'
+                    '"{0}"' -f ($argument -replace '"', '""')
                 }
                 else {
                     $argument

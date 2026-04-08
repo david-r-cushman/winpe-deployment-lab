@@ -32,7 +32,7 @@ function New-WinPEDeployIso {
     $wimName = $context.Config.WIMName
     $wimPath = Join-Path $context.Paths.WimRoot $wimName
 
-    if (-not (Test-Path $wimPath)) {
+    if (-not (Test-Path -LiteralPath $wimPath)) {
         throw "Expected WIM file not found: $wimPath. Ensure the captured image has been copied to Build\WIM."
     }
     Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS
@@ -155,6 +155,7 @@ Invoke-NativeCommand -FilePath 'wpeutil' -ArgumentList @('shutdown') -Descriptio
     $bootWimMounted = $false
     $saveBootWimChanges = $false
     try {
+        Prepare-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath -ErrorAction Stop
         $bootWimMounted = $true
         Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS
