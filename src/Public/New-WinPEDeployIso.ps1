@@ -37,7 +37,7 @@ function New-WinPEDeployIso {
     Write-WorkspaceLog "Created Deploy folder at $deployFolder" -Level SUCCESS
 
     $payloadSource = $context.Paths.PayloadTemplateRoot
-    $payloadFiles = @("Diskconfig.txt", "Unattend.xml")
+    $payloadFiles = @("Diskconfig.txt", "Unattend.xml", "PostDeploy.ps1", "SetupComplete.cmd")
 
     foreach ($file in $payloadFiles) {
         $sourceFile = Join-Path $payloadSource $file
@@ -118,6 +118,15 @@ Copy-Item -LiteralPath "`$isoDrive\Deploy\Unattend.xml" -Destination `$unattendT
 & icacls `$unattendTarget /inheritance:e | Out-Null
 Write-Host '[SUCCESS] Copied Unattend.xml into C:\Windows\Panther'
 
+`$setupScriptsPath = 'C:\Windows\Setup\Scripts'
+if (-not (Test-Path -LiteralPath `$setupScriptsPath)) {
+    New-Item -Path `$setupScriptsPath -ItemType Directory -Force | Out-Null
+}
+
+Copy-Item -LiteralPath "`$isoDrive\Deploy\SetupComplete.cmd" -Destination (Join-Path `$setupScriptsPath 'SetupComplete.cmd') -Force
+Copy-Item -LiteralPath "`$isoDrive\Deploy\PostDeploy.ps1" -Destination (Join-Path `$setupScriptsPath 'PostDeploy.ps1') -Force
+Write-Host '[SUCCESS] Copied SetupComplete.cmd and PostDeploy.ps1 into C:\Windows\Setup\Scripts'
+
 Invoke-NativeCommand -FilePath 'wpeutil' -ArgumentList @('shutdown') -Description 'Shutting down WinPE'
 "@
     Set-Content -Path (Join-Path $deployFolder "Deploy.ps1") -Value $deployScript
@@ -153,3 +162,4 @@ X:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypas
 
     Write-WorkspaceLog "New-WinPEDeployISO.ps1 steps complete. WinPE-Deploy.iso created successfully." -Level SUCCESS
 }
+
