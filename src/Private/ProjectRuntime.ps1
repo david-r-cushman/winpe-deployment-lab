@@ -190,3 +190,31 @@ function Remove-ItemIfPresent {
         Remove-Item -LiteralPath $Path -Recurse -Force
     }
 }
+
+function Invoke-ExternalTool {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+
+        [Parameter()]
+        [string[]]$ArgumentList = @(),
+
+        [Parameter(Mandatory = $true)]
+        [string]$Description
+    )
+
+    $output = & $FilePath @ArgumentList 2>&1
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
+        $outputText = ($output | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($outputText)) {
+            throw "$Description failed with exit code $exitCode."
+        }
+
+        throw "$Description failed with exit code $exitCode. Output: $outputText"
+    }
+
+    return $output
+}

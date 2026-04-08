@@ -52,6 +52,7 @@ function Update-WinPEWimImage {
         }
         catch {
             Write-WorkspaceLog "Failed to remove offline folder: $($_.Exception.Message)" -Level ERROR
+            throw
         }
     }
     else {
