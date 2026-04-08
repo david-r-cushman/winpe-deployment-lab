@@ -8,6 +8,8 @@ Rather than creating a second generated workspace elsewhere on disk, the reposit
 
 While MDT and SCCM are powerful, they often mask the underlying mechanics of OS deployment. I built this framework to work closer to the underlying WinPE, DISM, WIM, and unattended deployment layers so the process stays visible, scriptable, and portable.
 
+The intended use case is narrow on purpose: rapidly building consistent local Hyper-V development and test VMs from a known-good reference image. This project is not intended to be a full enterprise deployment framework or a hardware-imaging solution for physical devices.
+
 The goal is to show practical endpoint engineering skills through:
 
 - WinPE boot media creation
@@ -62,6 +64,14 @@ The root scripts are intentionally thin wrappers. They preserve a simple script-
 These values are intended to be customized per derived project repo. Runtime paths are not stored in config; they are calculated from the repository layout.
 
 Typical customization examples include changing the configured image name and description to match a target such as Windows 11 by edition, build, and architecture, or a specific Windows Server build.
+
+## Intended Scope
+
+- This workflow is designed for local virtual machine deployment, especially repeatable Hyper-V-based dev and test systems.
+- The reference image is meant to produce standardized, disposable lab systems in a known-good state before additional testing begins.
+- The current implementation intentionally prioritizes image capture, offline servicing, deployment, and a small amount of post-deploy bootstrap work over broader enterprise imaging concerns.
+- Hardware-specific workflows such as driver injection are out of scope for this project because the target environment is virtualized rather than physical.
+- The bundled post-deploy software installation is intentionally minimal. PowerShell 7.6 is included as a practical example of post-deployment automation and a useful baseline for further testing.
 
 ## Script Usage
 
@@ -144,6 +154,30 @@ The current deployment payload also stages a post-deploy bootstrap under `C:\Win
 
 This keeps project configuration and source under version control while preventing accidental commits of large artifacts or operational state.
 
-## Current Direction
+## Design Decisions And Lessons Learned
 
-This repository began with original project files dropped into the root from an earlier iteration. The current refactor is moving that work into a cleaner template-aligned structure that fits the broader PowerShell project conventions used across this portfolio.
+- The repository is the workspace. The original project created a second generated workspace and copied scripts into it. I refactored that model so the repo itself became the working area, with repo-local runtime folders under `Build`.
+- Configuration stays tracked, runtime paths stay derived. The old generated JSON handoff was replaced by [`config/osd-config.json`](config/osd-config.json), which keeps meaningful image settings while allowing the scripts to calculate repo-relative paths at runtime.
+- Sensitive unattended content should never be tracked. The repo now tracks [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) and creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy for WSIM editing.
+- PowerShell in WinPE was worth the added setup cost. WinPE still requires `startnet.cmd` as its entry point, but adding the WinPE PowerShell optional components made the capture and deploy logic easier to evolve and debug than the original batch-based approach.
+- The migration surfaced a few real implementation issues that had to be solved:
+  - generated PowerShell payloads initially broke because of incorrect quote handling
+  - the deploy bootstrap needed a more PowerShell-native method for locating the ISO drive
+  - `Unattend.xml` staging initially triggered an `oobeSystem` access-denied error until file handling in `C:\Windows\Panther` was tightened
+  - running a full software install directly inside `SetupComplete.cmd` worked, but created a poor black-screen user experience; switching to `RunOnce` produced a much cleaner handoff
+- Offline image maintenance is intentional, not cosmetic. Capturing the WIM locally to `C:\CapturedImages` is simpler and more reliable than introducing networking into the capture phase, and [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1) exists to remove that artifact cleanly before deployment.
+- Post-deploy software installation belongs after imaging, not inside the base image by default. The current example installs PowerShell 7.6 after first logon, which keeps the image reusable while still demonstrating application deployment and post-deployment automation.
+
+## Current State
+
+This repository began as a set of original project files dropped into the repo root from an earlier iteration. It has since been refactored into a cleaner template-aligned PowerShell project with:
+
+- repo-local runtime structure under `Build`
+- tracked project configuration in [`config/osd-config.json`](config/osd-config.json)
+- thin root script wrappers over `src/Public` and `src/Private`
+- PowerShell-enabled WinPE media for both capture and deployment
+- offline WIM maintenance
+- safe unattended file handling
+- a validated post-deploy PowerShell 7.6 bootstrap
+
+The current focus is no longer on reorganizing the project, but on keeping the workflow reliable, understandable, and useful as a repeatable VM deployment template.
