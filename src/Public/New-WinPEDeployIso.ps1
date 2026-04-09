@@ -31,11 +31,17 @@ function New-WinPEDeployIso {
 
     $wimName = $context.Config.WIMName
     $wimPath = Join-Path $context.Paths.WimRoot $wimName
+    $unattendPath = Join-Path $context.Paths.PayloadTemplateRoot 'Unattend.xml'
 
     if (-not (Test-Path -LiteralPath $wimPath)) {
         throw "Expected WIM file not found: $wimPath. Ensure the captured image has been copied to Build\WIM."
     }
     Write-WorkspaceLog "Validated captured WIM file: $wimPath" -Level SUCCESS
+
+    if (-not (Test-Path -LiteralPath $unattendPath)) {
+        throw "Required file missing: $unattendPath. Create a project-specific PayloadTemplates\Unattend.xml locally, keep it out of source control, and place it in PayloadTemplates before building deployment media."
+    }
+    Write-WorkspaceLog "Validated deployment answer file: $unattendPath" -Level SUCCESS
 
     $deployISOName = $context.Config.DeployISOName
     $deployISOPath = Join-Path $context.Paths.IsoRoot $deployISOName
@@ -59,10 +65,6 @@ function New-WinPEDeployIso {
     foreach ($file in $payloadFiles) {
         $sourceFile = Join-Path $payloadSource $file
         if (-not (Test-Path -LiteralPath $sourceFile)) {
-            if ($file -eq 'Unattend.xml') {
-                throw "Required file missing: $sourceFile. Run .\New-WinPEWorkspace.ps1 to create the local working copy, then update it in Windows System Image Manager before building deployment media."
-            }
-
             throw "Required file missing: $sourceFile"
         }
 

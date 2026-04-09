@@ -139,62 +139,6 @@ Describe 'Initialize-WinPEProjectRuntime' {
     }
 }
 
-Describe 'Initialize-UnattendWorkingCopy' {
-    BeforeAll {
-        $projectRoot = Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent
-
-        function Write-WorkspaceLog {
-            param(
-                [Parameter(Mandatory)]
-                [string]$Message,
-
-                [Parameter()]
-                [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
-                [string]$Level = 'INFO'
-            )
-        }
-
-        . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
-    }
-
-    It 'creates a local unattend working copy from the tracked template when missing' {
-        $payloadRoot = Join-Path $TestDrive 'PayloadTemplates'
-        New-Item -Path $payloadRoot -ItemType Directory -Force | Out-Null
-
-        '<unattend />' | Set-Content -Path (Join-Path $payloadRoot 'Unattend.Template.xml')
-
-        $context = [pscustomobject]@{
-            Paths = [pscustomobject]@{
-                PayloadTemplateRoot = $payloadRoot
-            }
-        }
-
-        Initialize-UnattendWorkingCopy -Context $context
-
-        $workingPath = Join-Path $payloadRoot 'Unattend.xml'
-        $workingPath | Should -Exist
-        (Get-Content -Path $workingPath -Raw) | Should -Be "<unattend />$([Environment]::NewLine)"
-    }
-
-    It 'does not overwrite an existing unattend working copy' {
-        $payloadRoot = Join-Path $TestDrive 'PayloadTemplatesExisting'
-        New-Item -Path $payloadRoot -ItemType Directory -Force | Out-Null
-
-        '<template />' | Set-Content -Path (Join-Path $payloadRoot 'Unattend.Template.xml')
-        '<working />' | Set-Content -Path (Join-Path $payloadRoot 'Unattend.xml')
-
-        $context = [pscustomobject]@{
-            Paths = [pscustomobject]@{
-                PayloadTemplateRoot = $payloadRoot
-            }
-        }
-
-        Initialize-UnattendWorkingCopy -Context $context
-
-        (Get-Content -Path (Join-Path $payloadRoot 'Unattend.xml') -Raw) | Should -Be "<working />$([Environment]::NewLine)"
-    }
-}
-
 Describe 'Enable-WinPEPowerShellSupport' {
     BeforeAll {
         $projectRoot = Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent
@@ -268,3 +212,67 @@ Describe 'Remove-ItemIfPresent' {
         { Remove-ItemIfPresent -Path $path } | Should -Not -Throw
     }
 }
+
+Describe 'New-WinPEDeployIso' {
+    BeforeAll {
+        $projectRoot = Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent
+
+        function Write-WorkspaceLog {
+            param(
+                [Parameter(Mandatory)]
+                [string]$Message,
+
+                [Parameter()]
+                [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
+                [string]$Level = 'INFO'
+            )
+        }
+
+        function Initialize-WorkspaceLogging {
+            param(
+                [string]$WorkspaceRoot,
+                [string]$LogRoot
+            )
+        }
+
+        . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
+        . (Join-Path $projectRoot 'src\Public\New-WinPEDeployIso.ps1')
+    }
+
+    It 'fails before WinPE staging when the local unattended answer file is missing' {
+        $root = Join-Path $TestDrive 'DeployProject'
+        $configRoot = Join-Path $root 'config'
+        $payloadRoot = Join-Path $root 'PayloadTemplates'
+        $wimRoot = Join-Path $root 'Build\WIM'
+
+        New-Item -Path $configRoot -ItemType Directory -Force | Out-Null
+        New-Item -Path $payloadRoot -ItemType Directory -Force | Out-Null
+        New-Item -Path $wimRoot -ItemType Directory -Force | Out-Null
+
+        @'
+{
+  "BootISOName": "WinPE-Capture.iso",
+  "WIMName": "Reference.wim",
+  "DeployISOName": "WinPE-Deploy.iso",
+  "ImageDescription": "Reference image",
+  "CaptureLocation": "C:\\CapturedImages"
+}
+'@ | Set-Content -Path (Join-Path $configRoot 'osd-config.json')
+
+        'wim' | Set-Content -Path (Join-Path $wimRoot 'Reference.wim')
+        'diskpart' | Set-Content -Path (Join-Path $payloadRoot 'Diskconfig.txt')
+        'postdeploy' | Set-Content -Path (Join-Path $payloadRoot 'PostDeploy.ps1')
+        'setupcomplete' | Set-Content -Path (Join-Path $payloadRoot 'SetupComplete.cmd')
+
+        Mock Assert-AdministratorSession {}
+        Mock Assert-AdkEnvironment {}
+        Mock Invoke-ExternalTool {}
+
+        {
+            New-WinPEDeployIso -ProjectRoot $root
+        } | Should -Throw '*Required file missing*Unattend.xml*'
+
+        Should -Invoke Invoke-ExternalTool -Times 0
+    }
+}
+

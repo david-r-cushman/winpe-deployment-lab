@@ -88,35 +88,6 @@ function Initialize-WinPEProjectRuntime {
     }
 }
 
-function Initialize-UnattendWorkingCopy {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [psobject]$Context
-    )
-
-    $templatePath = Join-Path $Context.Paths.PayloadTemplateRoot 'Unattend.Template.xml'
-    $workingPath = Join-Path $Context.Paths.PayloadTemplateRoot 'Unattend.xml'
-
-    if (-not (Test-Path -LiteralPath $templatePath)) {
-        throw "Unattend template not found at '$templatePath'."
-    }
-
-    if (-not (Test-Path -LiteralPath $workingPath)) {
-        try {
-            Copy-Item -LiteralPath $templatePath -Destination $workingPath -Force -ErrorAction Stop
-        }
-        catch {
-            throw "Failed to create local unattend working file from template '$templatePath' to '$workingPath'. $($_.Exception.Message)"
-        }
-        Write-WorkspaceLog "Created local unattend working file from template: $workingPath" -Level SUCCESS
-        Write-WorkspaceLog "Review and update $workingPath locally with Windows System Image Manager before building deployment media." -Level WARNING
-    }
-    else {
-        Write-WorkspaceLog "Local unattend working file already exists: $workingPath" -Level INFO
-    }
-}
-
 function Assert-AdministratorSession {
     [CmdletBinding()]
     param()

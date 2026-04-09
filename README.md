@@ -27,12 +27,13 @@ The expected workflow is:
 1. Create a new repository from this template.
 2. Clone the new repository locally.
 3. Review and customize [`config/osd-config.json`](config/osd-config.json) for that specific image project.
-4. Review and customize the payload templates in [`PayloadTemplates`](PayloadTemplates).
+4. Review and customize the payload files in [`PayloadTemplates`](PayloadTemplates).
 5. Use the configured `WIMName`, `ImageDescription`, and related values to match the image you actually intend to capture or deploy.
-6. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) once to initialize the local runtime folders and create a local `PayloadTemplates/Unattend.xml` working copy from the tracked template.
-7. Open the local `PayloadTemplates/Unattend.xml` in Windows System Image Manager, update the required password values, and save the file locally.
-8. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
-9. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
+6. Create a project-specific local [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) and keep it ignored by git.
+7. Author and validate that answer file separately, for example in Windows System Image Manager, before attempting to build deployment media.
+8. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) once to initialize the local runtime folders.
+9. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
+10. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
 
 The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
 
@@ -41,7 +42,7 @@ WinPE now boots into a PowerShell-enabled runtime. The generated media still use
 ## Repository Layout
 
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
-- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.Template.xml`, `Diskconfig.txt`, `Assign-C.txt`, and post-deploy bootstrap scripts
+- [`PayloadTemplates`](PayloadTemplates): deployment payload files such as `Diskconfig.txt`, `Assign-C.txt`, `Unattend.xml` (local/ignored), and post-deploy bootstrap scripts
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
 - [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
 - [`src/Private`](src/Private): shared runtime helpers used by the script entry points
@@ -92,7 +93,7 @@ Internally, each root script loads and calls a corresponding public function:
 PowerShell.exe .\New-WinPEWorkspace.ps1
 ```
 
-Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output. It also creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy from [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) when needed.
+Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output. It does not generate an answer file; deployment builds expect a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) to already exist.
 
 ### Build Capture ISO
 
@@ -137,10 +138,10 @@ The current deployment payload also stages a post-deploy bootstrap under `C:\Win
 
 ## Security Notes
 
-[`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) is the tracked template/example file. [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) is the local working copy created during initialization and is ignored by git.
+[`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) is expected to be a local, ignored, project-specific answer file.
 
-- The tracked template uses placeholder password values for demonstration only.
-- The local working copy should be reviewed and finalized locally with Windows System Image Manager.
+- Authoring the unattended answer file itself is intentionally out of scope for this repository.
+- Create and validate `PayloadTemplates/Unattend.xml` separately, for example with Windows System Image Manager, then keep it local and ignored by git.
 - Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
 - This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
 
@@ -160,7 +161,7 @@ This keeps project configuration and source under version control while preventi
 
 - The repository is the workspace. The original project created a second generated workspace and copied scripts into it. I refactored that model so the repo itself became the working area, with repo-local runtime folders under `Build`.
 - Configuration stays tracked, runtime paths stay derived. The old generated JSON handoff was replaced by [`config/osd-config.json`](config/osd-config.json), which keeps meaningful image settings while allowing the scripts to calculate repo-relative paths at runtime.
-- Sensitive unattended content should never be tracked. The repo now tracks [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) and creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy for WSIM editing.
+- Sensitive unattended content should never be tracked. This repo expects a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) supplied by the project user.
 - PowerShell in WinPE was worth the added setup cost. WinPE still requires `startnet.cmd` as its entry point, but adding the WinPE PowerShell optional components made the capture and deploy logic easier to evolve and debug than the original batch-based approach.
 - The migration surfaced a few real implementation issues that had to be solved:
   - generated PowerShell payloads initially broke because of incorrect quote handling
