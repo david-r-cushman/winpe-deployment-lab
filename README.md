@@ -80,6 +80,15 @@ Typical customization examples include changing the configured image name and de
 
 Run these from the repository root unless noted otherwise.
 
+The root scripts have been tested from an elevated Deployment and Imaging Tools Environment session using both Windows PowerShell 5.1 and PowerShell 7 (`pwsh`).
+
+Example host shells:
+
+```powershell
+powershell.exe .\New-WinPEWorkspace.ps1
+pwsh .\New-WinPEWorkspace.ps1
+```
+
 Internally, each root script loads and calls a corresponding public function:
 
 - `New-WinPEWorkspace.ps1` -> `Initialize-WinPEProject`

@@ -17,7 +17,9 @@
 
     The resulting ISO launches PowerShell in WinPE, automates disk partitioning, applies
     the captured WIM to C:\, configures boot files, injects Unattend.xml, stages a
-    post-deploy bootstrap under C:\Windows\Setup\Scripts, and shuts down the VM.
+    post-deploy bootstrap under C:\Windows\Setup\Scripts, and shuts down the VM. It has
+    been tested from an elevated Deployment and Imaging Tools Environment session using
+    both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
 
 .PARAMETER None
     All configuration is driven by the checked-in config\osd-config.json file.
@@ -38,7 +40,8 @@
     IMPORTANT:
     This script must be executed from within the "Deployment and Imaging Tools Environment"
     shell provided by the Windows ADK, launched as Administrator. Required tools include
-    copype.cmd, MakeWinPEMedia, and DISM.
+    copype.cmd, MakeWinPEMedia, and DISM. The tested host shells are Windows PowerShell 5.1
+    (powershell.exe) and PowerShell 7 (pwsh).
 #>
 
 . "$PSScriptRoot\Write-WorkspaceLog.ps1"

@@ -7,7 +7,8 @@
     WIM from the repository-local Build\WIM folder, performs offline maintenance tasks,
     and commits changes. Example maintenance included here: removing the empty
     C:\CapturedImages folder so that deployed systems do not contain a distracting
-    placeholder directory.
+    placeholder directory. It has been tested from an elevated Deployment and Imaging
+    Tools Environment session using both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
 
     Logging is lifecycle-safe and recruiter-friendly:
       * All messages are written to the console immediately.

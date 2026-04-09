@@ -6,7 +6,9 @@
     Uses the current repo configuration to create a capture ISO, adds
     WinPE PowerShell support to boot.wim, injects generated capture logic,
     and prepares the ISO to capture a reference image to the configured
-    capture location.
+    capture location. This public function has been tested through the root wrapper flow
+    from an elevated Deployment and Imaging Tools Environment session using both Windows
+    PowerShell 5.1 and PowerShell 7 (pwsh).
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.

@@ -5,7 +5,10 @@
 .DESCRIPTION
     Validates the configured captured WIM, stages deployment payload files,
     customizes boot.wim with WinPE PowerShell support and generated deployment
-    logic, and creates a deployment ISO under the repo-local Build structure.
+    logic, and creates a deployment ISO under the repo-local Build structure. This public
+    function has been tested through the root wrapper flow from an elevated Deployment
+    and Imaging Tools Environment session using both Windows PowerShell 5.1 and
+    PowerShell 7 (pwsh).
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.

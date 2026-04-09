@@ -5,7 +5,9 @@
 .DESCRIPTION
     Validates and mounts the configured WIM from the repo-local Build\WIM
     folder, applies the scripted maintenance step, and saves or discards
-    changes based on success.
+    changes based on success. This public function has been tested through the root
+    wrapper flow from an elevated Deployment and Imaging Tools Environment session using
+    both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.
