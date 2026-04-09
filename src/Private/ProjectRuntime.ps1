@@ -103,7 +103,12 @@ function Initialize-UnattendWorkingCopy {
     }
 
     if (-not (Test-Path -LiteralPath $workingPath)) {
-        Copy-Item -LiteralPath $templatePath -Destination $workingPath -Force
+        try {
+            Copy-Item -LiteralPath $templatePath -Destination $workingPath -Force -ErrorAction Stop
+        }
+        catch {
+            throw "Failed to create local unattend working file from template '$templatePath' to '$workingPath'. $($_.Exception.Message)"
+        }
         Write-WorkspaceLog "Created local unattend working file from template: $workingPath" -Level SUCCESS
         Write-WorkspaceLog "Review and update $workingPath locally with Windows System Image Manager before building deployment media." -Level WARNING
     }
@@ -137,18 +142,13 @@ function Get-WinPEOptionalComponentPath {
     param()
 
     $kitsRoot = Join-Path -Path ${env:ProgramFiles(x86)} -ChildPath 'Windows Kits\10'
-    $candidates = @(
-        (Join-Path -Path $kitsRoot -ChildPath 'Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs'),
-        (Join-Path -Path $kitsRoot -ChildPath 'Assessment and Deployment Kit\Windows Preinstallation Environment\x86\WinPE_OCs')
-    )
+    $optionalComponentsPath = Join-Path -Path $kitsRoot -ChildPath 'Assessment and Deployment Kit\Windows Preinstallation Environment\amd64\WinPE_OCs'
 
-    foreach ($candidate in $candidates) {
-        if (Test-Path -LiteralPath $candidate) {
-            return $candidate
-        }
+    if (Test-Path -LiteralPath $optionalComponentsPath) {
+        return $optionalComponentsPath
     }
 
-    throw "WinPE optional components path not found under '$kitsRoot'. Ensure the Windows ADK WinPE add-on is installed."
+    throw "WinPE optional components path not found for architecture 'amd64' at '$optionalComponentsPath'. Ensure the Windows ADK WinPE add-on is installed for the required architecture."
 }
 
 function Enable-WinPEPowerShellSupport {
