@@ -6,7 +6,8 @@
     This command validates the checked-in project configuration and ensures that the
     transient runtime folders used for ISO creation, WIM maintenance, and logging exist
     under the repository itself. The repository is the workspace; this script no longer
-    creates a second copy of the project elsewhere on disk.
+    creates a second copy of the project elsewhere on disk or generates an unattended
+    answer file.
 
 .EXAMPLE
     PowerShell.exe .\New-WinPEWorkspace.ps1

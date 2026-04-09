@@ -113,7 +113,7 @@ function Write-WorkspaceLog {
         'SUCCESS' { Write-Host $logEntry -ForegroundColor Green }
         'INFO'    { Write-Host $logEntry -ForegroundColor Cyan }
         'WARNING' { Write-Warning $logEntry }
-        'ERROR'   { Write-Error -Message $logEntry -ErrorAction Continue }
+        'ERROR'   { Write-Host $logEntry -ForegroundColor Red }
     }
 
     # If workspace log path is not yet set, buffer the message
