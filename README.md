@@ -44,6 +44,7 @@ WinPE now boots into a PowerShell-enabled runtime. The generated media still use
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
 - [`PayloadTemplates`](PayloadTemplates): deployment payload files such as `Diskconfig.txt`, `Assign-C.txt`, `Unattend.xml` (local/ignored), and post-deploy bootstrap scripts
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
+- [`docs`](docs): supporting notes on project evolution, implementation decisions, and operating model
 - [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
 - [`src/Private`](src/Private): shared runtime helpers used by the script entry points
 - root-level script entry points:
@@ -53,6 +54,8 @@ WinPE now boots into a PowerShell-enabled runtime. The generated media still use
   - [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1)
 
 The root scripts are intentionally thin wrappers. They preserve a simple script-first operator experience while delegating the actual implementation to functions under `src/Public` and shared helpers under `src/Private`.
+
+For deeper background on why the project is structured this way, see [`docs/implementation-decisions.md`](docs/implementation-decisions.md).
 
 ## Configuration
 
@@ -151,6 +154,8 @@ The current deployment payload also stages a post-deploy bootstrap under `C:\Win
 
 - Authoring the unattended answer file itself is intentionally out of scope for this repository.
 - Create and validate `PayloadTemplates/Unattend.xml` separately, for example with Windows System Image Manager, then keep it local and ignored by git.
+- For this repo's intended flow, the answer file must set the built-in `Administrator` password and configure one automatic logon as `Administrator`.
+- Additional OOBE and locale settings are strongly recommended so deployment reaches the desktop without manual prompts.
 - Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
 - This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
 
