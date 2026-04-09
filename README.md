@@ -1,105 +1,185 @@
-# PowerShell 7.4 Template: Available Anywhere
+# WinPE Deployment Lab
 
-This repository is a GitHub template that provides a baseline development environment for new PowerShell projects.
+[![Pester](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml/badge.svg?branch=main)](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml)
 
-It is intended to give new repositories a consistent starting point for:
+This repository is a PowerShell-based lab for building and maintaining WinPE media and offline Windows image artifacts from a repo-local workflow.
 
-- PowerShell 7.4 development
-- local VS Code development
-- Docker Dev Container development
-- GitHub Codespaces development
-- formatting and linting standards
-- Pester-based testing structure
-- secure-by-default development habits
+Rather than creating a second generated workspace elsewhere on disk, the repository itself is the workspace. A new project can be created from this template, cloned locally, customized, and then used directly to build capture and deployment media.
 
-Project-specific scripts, modules, tests, and automation are expected to be added in repositories created from this template.
+## Why I Built This
 
-The template is designed to support both script-based and module-oriented PowerShell Core projects, with built-in structure for testing through Pester.
+While MDT and SCCM are powerful, they often mask the underlying mechanics of OS deployment. I built this framework to work closer to the underlying WinPE, DISM, WIM, and unattended deployment layers so the process stays visible, scriptable, and portable.
 
-## Mission
+The intended use case is narrow on purpose: rapidly building consistent local Hyper-V development and test VMs from a known-good reference image. This project is not intended to be a full enterprise deployment framework or a hardware-imaging solution for physical devices.
 
-This template gives new PowerShell repositories a ready-to-use development baseline that can be used locally, in a Dev Container, or in GitHub Codespaces.
+The goal is to show practical endpoint engineering skills through:
 
-The goal is to reduce credential exposure, improve environmental consistency, and make it easier to work from almost anywhere without rebuilding the same setup each time.
+- WinPE boot media creation
+- offline WIM maintenance
+- unattended deployment payload preparation
+- post-deployment software installation
+- repository-driven automation and repeatable project structure
 
-By using Docker-based development environments, third-party module execution, cloud CLI operations, and script testing can be performed inside a Linux-based workspace instead of directly on the host operating system.
+## Workflow Model
 
-## Architecture And Stack
+The expected workflow is:
 
-- **Runtime:** PowerShell 7.4.x (LTS) on Ubuntu 22.04
-- **Development Modes:** Local VS Code, Docker Dev Containers, and GitHub Codespaces
-- **Container Runtime:** Docker Desktop via WSL 2 backend for local container use
-- **Isolation Strategy:** The container is intended to minimize exposure of host credentials and host-resident developer tooling inside the development environment
-- **Credential Separation:** GitHub Copilot and similar authenticated extensions are intentionally excluded from the container environment
-- **Ephemeral Cloud Identity:** Cloud authentication is expected to occur inside the container session when needed by using commands such as `az login`
-- **Governance:** Integrated `PSScriptAnalyzer`, `EditorConfig`, and Markdown linting support
+1. Create a new repository from this template.
+2. Clone the new repository locally.
+3. Review and customize [`config/osd-config.json`](config/osd-config.json) for that specific image project.
+4. Review and customize the payload templates in [`PayloadTemplates`](PayloadTemplates).
+5. Use the configured `WIMName`, `ImageDescription`, and related values to match the image you actually intend to capture or deploy.
+6. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) once to initialize the local runtime folders and create a local `PayloadTemplates/Unattend.xml` working copy from the tracked template.
+7. Open the local `PayloadTemplates/Unattend.xml` in Windows System Image Manager, update the required password values, and save the file locally.
+8. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
+9. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
 
-## Key Features
+The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
 
-### Automated Tooling Injection
+WinPE now boots into a PowerShell-enabled runtime. The generated media still uses `startnet.cmd` as the entry point required by WinPE, but that file now acts only as a thin launcher for PowerShell payload scripts generated during ISO creation.
 
-The `Dockerfile` provisions a professional PowerShell engineering toolkit:
+## Repository Layout
 
-- **Pester:** For unit and integration testing
-- **PSScriptAnalyzer:** To enforce PowerShell best practices and security rules
-- **Azure CLI:** Pre-installed for cloud resource management
-- **PSReadLine:** Configured for a more efficient terminal experience
+- [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
+- [`PayloadTemplates`](PayloadTemplates): deployment payload templates such as `Unattend.Template.xml`, `Diskconfig.txt`, `Assign-C.txt`, and post-deploy bootstrap scripts
+- [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
+- [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
+- [`src/Private`](src/Private): shared runtime helpers used by the script entry points
+- root-level script entry points:
+  - [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1)
+  - [`New-WinPECaptureISO.ps1`](New-WinPECaptureISO.ps1)
+  - [`New-WinPEDeployISO.ps1`](New-WinPEDeployISO.ps1)
+  - [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1)
 
-### Tailored Developer Experience
+The root scripts are intentionally thin wrappers. They preserve a simple script-first operator experience while delegating the actual implementation to functions under `src/Public` and shared helpers under `src/Private`.
 
-The environment injects a specialized PowerShell profile that enables:
+## Configuration
 
-- **Predictive IntelliSense:** Leveraging local command history
-- **ListView Completion:** High-visibility completion menus
-- **Visual Feedback:** A clear startup message confirming the container environment has loaded
+[`config/osd-config.json`](config/osd-config.json) currently defines:
 
-## Editor Vs Container Trust Boundary
+- `BootISOName`
+- `WIMName`
+- `DeployISOName`
+- `ImageDescription`
+- `CaptureLocation`
 
-This template distinguishes between the host editor experience and the in-container development environment.
+These values are intended to be customized per derived project repo. Runtime paths are not stored in config; they are calculated from the repository layout.
 
-VS Code on the host may use convenience extensions such as GitHub Copilot or pull request tooling. The development container intentionally excludes those extensions and their authentication state so that code executed inside the container does not gain access to sensitive host credentials or cached tokens.
+Typical customization examples include changing the configured image name and description to match a target such as Windows 11 by edition, build, and architecture, or a specific Windows Server build.
 
-That same repository structure also supports GitHub Codespaces, providing a browser-accessible development environment when local workstation access is not the preferred option.
+## Intended Scope
 
-## What This Template Does Not Include
+- This workflow is designed for local virtual machine deployment, especially repeatable Hyper-V-based dev and test systems.
+- The reference image is meant to produce standardized, disposable lab systems in a known-good state before additional testing begins.
+- The current implementation intentionally prioritizes image capture, offline servicing, deployment, and a small amount of post-deploy bootstrap work over broader enterprise imaging concerns.
+- Hardware-specific workflows such as driver injection are out of scope for this project because the target environment is virtualized rather than physical.
+- The bundled post-deploy software installation is intentionally minimal. PowerShell 7.6 is included as a practical example of post-deployment automation and a useful baseline for further testing.
 
-This template does not ship with project-specific module code, public functions, private helpers, or Pester test implementations.
+## Script Usage
 
-Those are expected to be added in repositories created from this template. The goal is to provide a clean baseline without placeholder business logic that downstream projects must remove.
+Run these from the repository root unless noted otherwise.
 
-## Expected Contents Of Repositories Created From This Template
+Internally, each root script loads and calls a corresponding public function:
 
-Repositories created from this template are expected to add:
+- `New-WinPEWorkspace.ps1` -> `Initialize-WinPEProject`
+- `New-WinPECaptureISO.ps1` -> `New-WinPECaptureIso`
+- `New-WinPEDeployISO.ps1` -> `New-WinPEDeployIso`
+- `Maintain-WIMImage.ps1` -> `Update-WinPEWimImage`
 
-- PowerShell source files under `src`
-- Pester tests under `Tests`
-- project-specific documentation under `docs`
-- optional module manifest and build or validation automation as needed
+### Initialize Local Runtime Structure
 
-This template provides the environment, conventions, and structure. Downstream repositories provide the implementation.
+```powershell
+PowerShell.exe .\New-WinPEWorkspace.ps1
+```
 
-## Prerequisites And Setup
+Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output. It also creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy from [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) when needed.
 
-1. **Host OS:** Windows 11 with WSL 2 enabled
-2. **Tools:** Docker Desktop and VS Code with the **Dev Containers** extension
-3. **Launch:** Open the folder in VS Code and select **Reopen in Container** when prompted
+### Build Capture ISO
 
-If you are using GitHub Codespaces instead, create a new Codespace from a repository generated from this template and open the project in the browser-based editor.
+```powershell
+PowerShell.exe .\New-WinPEWorkspace.ps1
+PowerShell.exe .\New-WinPECaptureISO.ps1
+```
 
-## Engineering Philosophy
+Builds a PowerShell-enabled WinPE capture ISO in [`Build/ISO`](Build/ISO) using values from [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Capture.ps1` payload inside WinPE.
 
-> *"Zero Margin for Error"*
+### Maintain a Captured WIM
 
-This template carries over a high-consequence operational mindset into Infrastructure as Code and automation work.
+```powershell
+PowerShell.exe .\New-WinPEWorkspace.ps1
+PowerShell.exe .\Maintain-WIMImage.ps1
+```
 
-- **Deterministic Base Runtime:** The development container is built from a pinned PowerShell 7.4 on Ubuntu 22.04 base image to reduce environmental drift
-- **Controlled Tooling Baseline:** Core development tools are installed automatically in the container so that new repositories begin from a consistent baseline, even though not every tool is currently version-pinned
-- **Process Integrity:** Code is not just logic. It is a service. Linting, testing, and deliberate structure are used to keep behavior predictable
-- **Respect For State:** Any function that changes a system's state should support `-WhatIf` and `-Confirm` parameters
-- **Clean Development Boundary:** Development tools should not unnecessarily expose host credentials or host-resident auth state to code running in the container
+Mounts the configured WIM from [`Build/WIM`](Build/WIM), applies the scripted maintenance step, and saves the image.
 
-## Troubleshooting
+### Build Deployment ISO
 
-- **Rebuilding:** Use `F1 > Dev Containers: Rebuild Container Without Cache` to force a clean layer refresh
-- **Line Ending Errors:** Verify your local `git config core.autocrlf` is set to `input` or `false`
-- **Identity Issues:** Run `az login` inside the container terminal to authenticate your cloud session for that environment
+```powershell
+PowerShell.exe .\New-WinPEWorkspace.ps1
+# Example only: use the filename configured in config\osd-config.json
+Copy-Item .\SomeReferenceImage.wim .\Build\WIM\<Configured-WIMName>.wim
+PowerShell.exe .\New-WinPEDeployISO.ps1
+```
+
+Builds a PowerShell-enabled deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Deploy.ps1` payload inside WinPE.
+
+The current deployment payload also stages a post-deploy bootstrap under `C:\Windows\Setup\Scripts`. `SetupComplete.cmd` registers a one-time `RunOnce` launch for `PostDeploy.ps1`, which is currently used to install PowerShell 7.6 after the first automatic logon.
+
+## Prerequisites
+
+- Windows
+- PowerShell
+- Windows ADK Deployment Tools / WinPE tooling
+- WinPE optional components that ship with the ADK so the build process can add PowerShell support to `boot.wim`
+- elevated session when running ADK and DISM-dependent operations
+- Deployment and Imaging Tools Environment for `copype.cmd` and `MakeWinPEMedia`
+- outbound internet access from the deployed VM if you want the bundled post-deploy PowerShell 7 installer bootstrap to succeed
+
+## Security Notes
+
+[`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) is the tracked template/example file. [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) is the local working copy created during initialization and is ignored by git.
+
+- The tracked template uses placeholder password values for demonstration only.
+- The local working copy should be reviewed and finalized locally with Windows System Image Manager.
+- Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
+- This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
+
+## Git Hygiene
+
+[`.gitignore`](.gitignore) is configured to ignore local runtime artifacts such as:
+
+- `*.wim`
+- `*.iso`
+- `*.log`
+- `PayloadTemplates/Unattend.xml`
+- repo-local `Build` output and mount contents
+
+This keeps project configuration and source under version control while preventing accidental commits of large artifacts or operational state.
+
+## Design Decisions And Lessons Learned
+
+- The repository is the workspace. The original project created a second generated workspace and copied scripts into it. I refactored that model so the repo itself became the working area, with repo-local runtime folders under `Build`.
+- Configuration stays tracked, runtime paths stay derived. The old generated JSON handoff was replaced by [`config/osd-config.json`](config/osd-config.json), which keeps meaningful image settings while allowing the scripts to calculate repo-relative paths at runtime.
+- Sensitive unattended content should never be tracked. The repo now tracks [`PayloadTemplates/Unattend.Template.xml`](PayloadTemplates/Unattend.Template.xml) and creates a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) working copy for WSIM editing.
+- PowerShell in WinPE was worth the added setup cost. WinPE still requires `startnet.cmd` as its entry point, but adding the WinPE PowerShell optional components made the capture and deploy logic easier to evolve and debug than the original batch-based approach.
+- The migration surfaced a few real implementation issues that had to be solved:
+  - generated PowerShell payloads initially broke because of incorrect quote handling
+  - the deploy bootstrap needed a more PowerShell-native method for locating the ISO drive
+  - `Unattend.xml` staging initially triggered an `oobeSystem` access-denied error until file handling in `C:\Windows\Panther` was tightened
+  - running a full software install directly inside `SetupComplete.cmd` worked, but created a poor black-screen user experience; switching to `RunOnce` produced a much cleaner handoff
+- Offline image maintenance is intentional, not cosmetic. Capturing the WIM locally to `C:\CapturedImages` is simpler and more reliable than introducing networking into the capture phase, and [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1) exists to remove that artifact cleanly before deployment.
+- Post-deploy software installation belongs after imaging, not inside the base image by default. The current example installs PowerShell 7.6 after first logon, which keeps the image reusable while still demonstrating application deployment and post-deployment automation.
+
+## Current State
+
+This repository began as a set of original project files dropped into the repo root from an earlier iteration. It has since been refactored into a cleaner template-aligned PowerShell project with:
+
+- repo-local runtime structure under `Build`
+- tracked project configuration in [`config/osd-config.json`](config/osd-config.json)
+- thin root script wrappers over `src/Public` and `src/Private`
+- PowerShell-enabled WinPE media for both capture and deployment
+- offline WIM maintenance
+- safe unattended file handling
+- a validated post-deploy PowerShell 7.6 bootstrap
+
+The current focus is no longer on reorganizing the project, but on keeping the workflow reliable, understandable, and useful as a repeatable VM deployment template.

@@ -1,0 +1,7 @@
+{
+  "BootISOName": "WinPE-Capture.iso",
+  "WIMName": "WinSvr2022-RefImage.wim",
+  "DeployISOName": "WinPE-Deploy.iso",
+  "ImageDescription": "Windows Server 2022 Reference Image",
+  "CaptureLocation": "C:\\CapturedImages"
+}
