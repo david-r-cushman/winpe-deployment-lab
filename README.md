@@ -78,6 +78,7 @@ Typical customization examples include changing the configured image name and de
 - The current implementation intentionally prioritizes image capture, offline servicing, deployment, and a small amount of post-deploy bootstrap work over broader enterprise imaging concerns.
 - Hardware-specific workflows such as driver injection are out of scope for this project because the target environment is virtualized rather than physical.
 - The bundled post-deploy software installation is intentionally minimal. PowerShell 7.6 is included as a practical example of post-deployment automation and a useful baseline for further testing.
+- This workflow is currently validated for unattended Desktop Experience-style OOBE deployments. While Windows Server Core uses the same Sysprep and unattend mechanisms, the current post-deployment flow assumes an automatic Administrator logon and RunOnce-based bootstrap, which has not been validated against Server Core.
 
 ## Script Usage
 
@@ -157,7 +158,6 @@ The current deployment payload also stages a post-deploy bootstrap under `C:\Win
 - For this repo's intended flow, the answer file must set the built-in `Administrator` password and configure one automatic logon as `Administrator`.
 - Additional OOBE and locale settings are strongly recommended so deployment reaches the desktop without manual prompts.
 - Do not commit real passwords, secret-bearing unattended files, WIM artifacts, ISO artifacts, or operational logs.
-- This workflow assumes an unattended OOBE-based deployment path and is therefore not intended for Windows Server Core deployment media in its current form.
 
 ## Git Hygiene
 
