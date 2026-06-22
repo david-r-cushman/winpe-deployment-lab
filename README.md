@@ -1,6 +1,7 @@
 # WinPE Deployment Lab
 
 [![Pester](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml/badge.svg?branch=main)](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml)
+![Template Version](https://img.shields.io/badge/template-0.11.0-blue)
 
 This repository is a PowerShell-based lab for building and maintaining WinPE media and offline Windows image artifacts from a repo-local workflow.
 
