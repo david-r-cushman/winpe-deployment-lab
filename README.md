@@ -172,6 +172,15 @@ The current deployment payload also stages a post-deploy bootstrap under `C:\Win
 
 This keeps project configuration and source under version control while preventing accidental commits of large artifacts or operational state.
 
+## Project Versioning
+
+This repository versions the WinPE deployment lab project itself using Semantic Versioning.
+
+- Current project version: see [`VERSION`](VERSION)
+- Version history: see [`CHANGELOG.md`](CHANGELOG.md)
+
+The project version is separate from the template-version badge at the top of this README. The badge records the `pwsh-dev-template` guidance version used for synced AI guidance and guardrails.
+
 ## Design Decisions And Lessons Learned
 
 - The repository is the workspace. The original project created a second generated workspace and copied scripts into it. I refactored that model so the repo itself became the working area, with repo-local runtime folders under `Build`.
