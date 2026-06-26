@@ -57,6 +57,7 @@ WinPE now boots into a PowerShell-enabled runtime. The generated media still use
 The root scripts are intentionally thin wrappers. They preserve a simple script-first operator experience while delegating the actual implementation to functions under `src/Public` and shared helpers under `src/Private`.
 
 For deeper background on why the project is structured this way, see [`docs/implementation-decisions.md`](docs/implementation-decisions.md).
+For a script-and-runtime architecture map of the current implementation, see [`docs/project-architecture-overview.md`](docs/project-architecture-overview.md).
 
 ## Configuration
 
