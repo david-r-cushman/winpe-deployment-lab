@@ -6,6 +6,10 @@ This project uses Semantic Versioning for the project itself. The project versio
 
 ## Unreleased
 
+### Changed
+
+- Aligned the Windows CI workflow, runtime policy, and version-policy validation around the repo's tracked ci.yml contract, actions/checkout@v7, and Pester 6.0.0.
+
 ## 0.1.1 - 2026-07-13
 
 ### Changed
