@@ -1,46 +1,90 @@
 # WinPE Deployment Lab
 
 [![Pester](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml/badge.svg?branch=main)](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml)
+<!-- BEGIN generated:readme-powershell-badge -->
+![PowerShell 7.4](https://img.shields.io/badge/PowerShell-7.4-blue)
+<!-- END generated:readme-powershell-badge -->
 ![Template Version](https://img.shields.io/badge/template-0.15.0-blue)
 
 This repository is a PowerShell-based lab for building and maintaining WinPE media and offline Windows image artifacts from a repo-local workflow.
 
 Rather than creating a second generated workspace elsewhere on disk, the repository itself is the workspace. A new project can be created from this template, cloned locally, customized, and then used directly to build capture and deployment media.
 
-## Why I Built This
+Quick navigation:
 
-While MDT and SCCM are powerful, they often mask the underlying mechanics of OS deployment. I built this framework to work closer to the underlying WinPE, DISM, WIM, and unattended deployment layers so the process stays visible, scriptable, and portable.
+- [Portfolio Context](#portfolio-context)
+- [Engineering Principles in Practice](#engineering-principles-in-practice)
+- [Validation And Maintenance](#validation-and-maintenance)
+- [Repository Structure](#repository-structure)
 
-The intended use case is narrow on purpose: rapidly building consistent local Hyper-V development and test VMs from a known-good reference image. This project is not intended to be a full enterprise deployment framework or a hardware-imaging solution for physical devices.
+<!-- BEGIN generated:readme-runtime-focus -->
+- PowerShell 7.4 development
+<!-- END generated:readme-runtime-focus -->
 
-The goal is to show practical endpoint engineering skills through:
+## Portfolio Context
 
-- WinPE boot media creation
-- offline WIM maintenance
-- unattended deployment payload preparation
-- post-deployment software installation
-- repository-driven automation and repeatable project structure
+This repository is part of my PowerShell portfolio built from [david-r-cushman/pwsh-dev-template](https://github.com/david-r-cushman/pwsh-dev-template). It serves as both a practical deployment lab and a documented exploration of what it means for me to say that I understand Windows deployment.
 
-## Workflow Model
+Rather than treating Microsoft Deployment Toolkit (MDT) or Microsoft Configuration Manager (ConfigMgr) as black boxes, this repository intentionally exposes the mechanics they build upon: WinPE, DISM, WIM creation and servicing, unattended deployment, offline image maintenance, and the bootstrap processes that transform those individual components into a repeatable deployment workflow.
 
-The expected workflow is:
+The objective is not to demonstrate that I can use enterprise deployment tooling. It is to demonstrate that I understand the mechanics those tools abstract, and that I can deconstruct those mechanics, reason about their behaviour, validate their implementation, and reassemble them into a working deployment solution.
 
-1. Create a new repository from this template.
-2. Clone the new repository locally.
-3. Review and customize [`config/osd-config.json`](config/osd-config.json) for that specific image project.
-4. Review and customize the payload files in [`PayloadTemplates`](PayloadTemplates).
-5. Use the configured `WIMName`, `ImageDescription`, and related values to match the image you actually intend to capture or deploy.
-6. Create a project-specific local [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) and keep it ignored by git.
-7. Author and validate that answer file separately, for example in Windows System Image Manager, before attempting to build deployment media.
-8. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) once to initialize the local runtime folders.
-9. Place the project-specific WIM file in [`Build/WIM`](Build/WIM) using the filename configured in [`config/osd-config.json`](config/osd-config.json) when needed.
-10. Run the PowerShell scripts from the repository root in an elevated Windows ADK Deployment and Imaging Tools Environment session.
+The scope is intentionally focused on repeatable local lab and Hyper-V-based development scenarios. By keeping the environment intentionally narrow, the underlying deployment mechanics remain visible, understandable, and easy to validate without the additional complexity of a full enterprise deployment environment.
 
-The repository contains tracked source, templates, and configuration. Runtime artifacts stay local and are ignored by git.
+If you are reviewing the repository for the first time, begin with the root script entry points, the tracked configuration in [`config/osd-config.json`](config/osd-config.json), and the supporting implementation notes in [`docs/implementation-decisions.md`](docs/implementation-decisions.md) and [`docs/project-architecture-overview.md`](docs/project-architecture-overview.md).
 
-WinPE now boots into a PowerShell-enabled runtime. The generated media still uses `startnet.cmd` as the entry point required by WinPE, but that file now acts only as a thin launcher for PowerShell payload scripts generated during ISO creation.
+## Engineering Principles in Practice
 
-## Repository Layout
+<!-- BEGIN generated:readme-runtime-philosophy -->
+- **Deterministic Base Runtime:** The development container is built from a pinned PowerShell 7.4 on Ubuntu 22.04 base image to reduce environmental drift
+<!-- END generated:readme-runtime-philosophy -->
+- **Repository-As-Workspace:** The repository itself is the working area. Tracked source, configuration, and payload templates live alongside repo-local runtime folders so the full workflow stays visible and repeatable.
+- **Tracked Configuration, Local Runtime State:** Project configuration belongs in version control, while generated artifacts, mount paths, logs, and deployment runtime state stay local under `Build` and out of git.
+- **Visible Deployment Mechanics:** Rather than hiding the process behind higher-level tooling, this repository keeps WinPE, DISM, WIM handling, unattended deployment, and bootstrap logic explicit so each stage can be inspected and understood.
+- **PowerShell-First WinPE Automation:** WinPE still requires `startnet.cmd`, but the actual capture and deployment flow is driven through PowerShell so the logic is easier to evolve, debug, and reason about than a batch-only approach.
+- **Offline Servicing By Design:** Capturing and maintaining WIM files offline is a deliberate part of the workflow. It keeps servicing predictable and avoids adding unnecessary environmental dependencies during image preparation.
+- **Untracked Sensitive Deployment Inputs:** Files such as `PayloadTemplates/Unattend.xml` are intentionally kept local and ignored so deployment-specific secrets and machine-specific answer-file details do not leak into source control.
+- **Post-Deploy Bootstrap Over Image Bloat:** Software installation and final configuration belong after imaging when practical. The repository favors a smaller, reusable base image plus targeted post-deployment automation over embedding every change directly into the reference image.
+
+## Use This Repository
+
+If you want to inspect or reproduce the workflow this repository demonstrates, use it like this:
+
+1. Review [`config/osd-config.json`](config/osd-config.json) for the project-specific image names and metadata.
+2. Review the payload content under [`PayloadTemplates`](PayloadTemplates), especially the unattended deployment inputs and bootstrap scripts.
+3. Create a local, ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) that matches the image and deployment flow you want to test.
+4. Run [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) to initialize the repo-local runtime folders under [`Build`](Build).
+5. Place the project-specific WIM in [`Build/WIM`](Build/WIM) when capture servicing or deployment media generation requires it.
+6. Run the root-level PowerShell entry points from an elevated Windows ADK Deployment and Imaging Tools Environment session.
+
+## Runtime And Environment
+
+<!-- BEGIN generated:readme-runtime-stack -->
+- **Runtime:** PowerShell 7.4.x (LTS) on Ubuntu 22.04
+<!-- END generated:readme-runtime-stack -->
+- **Operator Host:** Windows with the Windows ADK Deployment Tools and WinPE optional components available for ISO creation and image servicing
+- **Execution Model:** Root scripts are typically run from an elevated Deployment and Imaging Tools Environment session using either Windows PowerShell 5.1 or PowerShell 7
+- **Workspace Model:** The repository itself is the working area, with runtime artifacts created under repo-local `Build` paths instead of a second generated workspace
+- **Development Modes:** Local VS Code, Docker Dev Containers, and GitHub Codespaces remain available for repository development and validation work even though WinPE build operations themselves are Windows-specific
+
+## Tooling
+
+<!-- BEGIN generated:readme-tooling-list -->
+- **Pester 6.0.0:** For unit and integration testing
+- **PSScriptAnalyzer 1.25.0:** To enforce PowerShell best practices and security rules
+- **Azure CLI:** Pre-installed for cloud resource management
+- **PSReadLine 2.4.5:** Configured for a more efficient terminal experience
+<!-- END generated:readme-tooling-list -->
+
+Repository-specific build and deployment work also depends on:
+
+- **Windows ADK Deployment Tools:** For `copype.cmd`, `MakeWinPEMedia`, and the WinPE build toolchain
+- **WinPE Optional Components:** So the generated boot media can launch PowerShell-based payloads
+- **DISM tooling:** For offline WIM mount, servicing, and save operations
+
+When runtime or tooling versions are updated, keep `eng/runtime-policy.json`, generated Markdown, and validation scripts aligned.
+
+## Repository Structure
 
 - [`config/osd-config.json`](config/osd-config.json): checked-in project configuration for artifact names and image metadata
 - [`PayloadTemplates`](PayloadTemplates): deployment payload files such as `Diskconfig.txt`, `Assign-C.txt`, `Unattend.xml` (local/ignored), and post-deploy bootstrap scripts
@@ -58,6 +102,52 @@ The root scripts are intentionally thin wrappers. They preserve a simple script-
 
 For deeper background on why the project is structured this way, see [`docs/implementation-decisions.md`](docs/implementation-decisions.md).
 For a script-and-runtime architecture map of the current implementation, see [`docs/project-architecture-overview.md`](docs/project-architecture-overview.md).
+
+## Validation And Maintenance
+
+Run the standard repository checks before committing meaningful changes:
+
+```powershell
+pwsh -NoProfile -File ./scripts/Invoke-RepoChecks.ps1
+```
+
+If this repository keeps the template-managed generated Markdown blocks, refresh or validate them through:
+
+```powershell
+pwsh -NoProfile -File ./scripts/Update-GeneratedMarkdown.ps1 -Check
+```
+
+For implementation-specific validation, the repository also keeps a Windows-focused Pester workflow and should continue to review diffs for generated payload content, configuration changes, and documentation accuracy before merging changes.
+
+## Downstream Guidance Sync
+
+Use `.codex/skills/downstream-guidance-sync/SKILL.md` with `scripts/Invoke-TemplateGuidanceSync.ps1` when you want to adopt newer template guidance or README workflow assets from `pwsh-dev-template` without overwriting repository-owned implementation.
+
+## Prerequisites And Setup
+
+- Use Windows for WinPE build and deployment operations.
+- Install the Windows ADK Deployment Tools and the WinPE add-on / optional components needed for PowerShell-enabled boot media.
+- Use an elevated Deployment and Imaging Tools Environment session when running capture, deployment, and WIM-servicing scripts.
+- Create and validate a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) before attempting deployment-media generation.
+- Review `docs/agent-workflows.md`, `AGENTS.md`, and `.github/copilot-instructions.md` before using repo-local agent workflows to modify the repository.
+
+## Template Versioning
+
+The template version badge tracks inherited guidance and workflow baseline alignment. It does not mean this repository remains fully identical to the source template. Customize this section if you need to explain intentional divergence from the parent template.
+
+## Workflow Model
+
+The working model in this repository is intentionally simple:
+
+1. Tracked configuration in [`config/osd-config.json`](config/osd-config.json) defines the image names, descriptions, and artifact expectations for the current project.
+2. Tracked payload content in [`PayloadTemplates`](PayloadTemplates) provides the disk configuration, deployment helpers, and bootstrap material that get staged into generated media.
+3. A project-specific [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) stays local and ignored by git so unattended setup details can be validated separately without tracking sensitive or environment-specific content.
+4. [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1) initializes the repo-local `Build` workspace used for logs, mounts, WIM handling, and ISO output.
+5. Capture, maintenance, and deployment scripts then use that tracked configuration plus the local runtime workspace to build media, service WIMs, and assemble the deployment flow.
+
+The repository keeps source, templates, and configuration under version control while leaving runtime artifacts local and ignored by git.
+
+WinPE boots into a PowerShell-enabled runtime in this workflow. The generated media still uses `startnet.cmd` as the entry point required by WinPE, but that file now acts only as a thin launcher for PowerShell payload scripts generated during ISO creation.
 
 ## Configuration
 
