@@ -1,6 +1,6 @@
 # WinPE Deployment Lab
 
-[![Pester](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml/badge.svg?branch=main)](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/pester.yml)
+[![CI](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/david-r-cushman/winpe-deployment-lab/actions/workflows/ci.yml)
 <!-- BEGIN generated:readme-powershell-badge -->
 ![PowerShell 7.4](https://img.shields.io/badge/PowerShell-7.4-blue)
 <!-- END generated:readme-powershell-badge -->

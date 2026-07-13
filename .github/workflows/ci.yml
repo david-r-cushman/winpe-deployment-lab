@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repo-checks:
+    name: Repo checks (pwsh)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install PowerShell modules
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          Install-Module -Name Pester -Repository PSGallery -RequiredVersion 6.0.0 -Force -Scope CurrentUser -ErrorAction Stop
+          Import-Module Pester -RequiredVersion 6.0.0 -Force -ErrorAction Stop
+          Install-Module -Name PSScriptAnalyzer -Repository PSGallery -RequiredVersion 1.25.0 -Force -Scope CurrentUser -ErrorAction Stop
+          Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force -ErrorAction Stop
+
+      - name: Run repo checks
+        shell: pwsh
+        run: |
+          ./scripts/Invoke-RepoChecks.ps1 -Verbose -OutputPath ./artifacts
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: artifacts/TestResults.xml
+          if-no-files-found: ignore

@@ -143,9 +143,9 @@ function Test-PolicyRegexValue {
     }
 }
 
-Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*runs-on:\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.githubActions.runnerImage -Description 'GitHub Actions runner image'
-Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+Pester\s+.*?-RequiredVersion\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.pesterVersion -Description 'CI Pester version'
-Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+PSScriptAnalyzer\s+.*?-RequiredVersion\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.psScriptAnalyzerVersion -Description 'CI PSScriptAnalyzer version'
+Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*runs-on:\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.githubActions.runnerImage -Description 'CI workflow runner image'
+Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+-Name\s+Pester\s+.*?-RequiredVersion\s+(?<Value>\S+)\s+.*$' -ExpectedValue $policy.tooling.pesterVersion -Description 'CI workflow Pester version'
+Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+-Name\s+PSScriptAnalyzer\s+.*?-RequiredVersion\s+(?<Value>\S+)\s+.*$' -ExpectedValue $policy.tooling.psScriptAnalyzerVersion -Description 'PSScriptAnalyzer workflow version'
 
 Test-PolicyText -RelativePath 'README.md' -ExpectedText ('PowerShell {0}' -f $policy.runtime.powershellVersion) -Description 'README PowerShell version'
 Test-PolicyText -RelativePath 'README.md' -ExpectedText $policy.runtime.developmentHost -Description 'README development host'
