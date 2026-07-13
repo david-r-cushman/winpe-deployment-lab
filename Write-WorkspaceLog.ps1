@@ -3,8 +3,9 @@
     Provides hybrid logging for workspace automation scripts.
 
 .DESCRIPTION
-    This script defines two functions — Write-WorkspaceLog and Initialize-WorkspaceLogging —
-    that together implement lifecycle-safe, recruiter-friendly logging.
+    This root-scoped helper script defines Write-WorkspaceLog and
+    Initialize-WorkspaceLogging so the operator entry scripts and workflow functions can
+    share a single lifecycle-safe logging implementation.
 
     * Write-WorkspaceLog
         Logs messages to both the console and a workspace log file.
@@ -27,6 +28,8 @@
 .NOTES
     Author: David R. Cushman
     Script: Write-WorkspaceLog.ps1
+    Role: shared root-scoped logging helper sourced by the root entry scripts and the
+      workflow functions they load.
     Design rationale:
       * Hybrid logging guarantees recruiter-friendly visibility of all events.
       * Buffered messages prevent loss of early initialization steps.

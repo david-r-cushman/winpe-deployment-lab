@@ -89,15 +89,16 @@ When runtime or tooling versions are updated, keep `eng/runtime-policy.json`, ge
 - [`PayloadTemplates`](PayloadTemplates): deployment payload files such as `Diskconfig.txt`, `Assign-C.txt`, `Unattend.xml` (local/ignored), and post-deploy bootstrap scripts
 - [`Build`](Build): repo-local runtime workspace for logs, mount paths, WIM files, ISO output, and temporary WinPE build content
 - [`docs`](docs): supporting notes on project evolution, implementation decisions, and operating model
-- [`src/Public`](src/Public): public command implementations used by the root-level script wrappers
-- [`src/Private`](src/Private): shared runtime helpers used by the script entry points
-- root-level script entry points:
+- [`src/Public`](src/Public): workflow implementations invoked by the root operator entry scripts
+- [`src/Private`](src/Private): shared runtime helpers used by the workflow implementations
+- [`Write-WorkspaceLog.ps1`](Write-WorkspaceLog.ps1): shared root-scoped logging helper sourced by the entry scripts and workflow functions
+- root-level operator entry scripts:
   - [`New-WinPEWorkspace.ps1`](New-WinPEWorkspace.ps1)
   - [`New-WinPECaptureISO.ps1`](New-WinPECaptureISO.ps1)
   - [`New-WinPEDeployISO.ps1`](New-WinPEDeployISO.ps1)
   - [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1)
 
-The root scripts are intentionally thin wrappers. They preserve a simple script-first operator experience while delegating the actual implementation to functions under `src/Public` and shared helpers under `src/Private`.
+The root scripts are intentionally thin operator-facing wrappers. They preserve a simple script-first experience while delegating the actual workflow implementation to functions under `src/Public`. A separate root-scoped `Write-WorkspaceLog.ps1` helper provides shared logging for those entry scripts and the workflow functions they load, while `src/Private` contains the shared runtime helpers.
 
 For deeper background on why the project is structured this way, see [`docs/implementation-decisions.md`](docs/implementation-decisions.md).
 For a script-and-runtime architecture map of the current implementation, see [`docs/project-architecture-overview.md`](docs/project-architecture-overview.md).

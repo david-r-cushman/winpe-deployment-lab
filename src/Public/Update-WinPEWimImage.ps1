@@ -5,9 +5,9 @@
 .DESCRIPTION
     Validates and mounts the configured WIM from the repo-local Build\WIM
     folder, applies the scripted maintenance step, and saves or discards
-    changes based on success. This public function has been tested through the root
-    wrapper flow from an elevated Deployment and Imaging Tools Environment session using
-    both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
+    changes based on success. This public function is intended to be invoked through the
+    root operator entrypoint Maintain-WIMImage.ps1, using PowerShell 7 (pwsh) as the
+    documented host shell.
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.
@@ -15,10 +15,11 @@
 .EXAMPLE
     Update-WinPEWimImage -ProjectRoot 'E:\Git\winpe-deployment-lab'
 
-    Mounts the configured WIM, applies offline maintenance, and saves the image.
+    Mounts the configured WIM, applies offline maintenance, and saves the image for
+    the root operator workflow.
 #>
 function Update-WinPEWimImage {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter()]
         [string]$ProjectRoot = (Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent)
@@ -29,6 +30,10 @@ function Update-WinPEWimImage {
     Initialize-WorkspaceLogging -WorkspaceRoot $context.ProjectRoot -LogRoot $context.Paths.LogRoot
 
     Assert-AdministratorSession
+
+    if (-not $PSCmdlet.ShouldProcess($ProjectRoot, 'Apply offline WIM maintenance')) {
+        return
+    }
 
     $wimName = $context.Config.WIMName
     $wimPath = Join-Path $context.Paths.WimRoot $wimName
@@ -54,7 +59,7 @@ function Update-WinPEWimImage {
     $saveChanges = $false
 
     try {
-        Prepare-MountDirectory -Path $mountPath
+        Initialize-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $wimPath -Index 1 -Path $mountPath -ErrorAction Stop
         $wimMounted = $true
         Write-WorkspaceLog "Mounted WIM at $mountPath" -Level SUCCESS

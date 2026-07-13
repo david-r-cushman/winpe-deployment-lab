@@ -22,8 +22,9 @@ That is the main reason a project architecture overview adds value here: it make
 
 The repository solves a narrow lab deployment problem, but it does so with a deliberate shape:
 
-- thin root-level entry scripts for operator convenience
+- thin root-level operator entry scripts for convenience
 - public functions under `src/Public` for the main workflows
+- a root-scoped `Write-WorkspaceLog.ps1` helper for shared logging
 - shared runtime and validation helpers under `src/Private`
 - checked-in configuration and payload templates separated from runtime artifacts
 - repo-local `Build` folders that keep logs, WIMs, ISO output, and mount paths predictable
@@ -40,6 +41,8 @@ The root-level scripts are the operator entry points:
 - `New-WinPECaptureISO.ps1`
 - `New-WinPEDeployISO.ps1`
 - `Maintain-WIMImage.ps1`
+
+A separate root-scoped helper, `Write-WorkspaceLog.ps1`, provides the shared logging functions used during initialization and workflow execution.
 
 Those wrappers intentionally stay thin. Internally they hand off to public functions under `src/Public`:
 
@@ -223,11 +226,11 @@ They keep native tool execution and temporary-path cleanup out of the higher-lev
 
 ### Logging
 
-Logging is split into its own root helper script:
+Logging is split into its own root-scoped helper script:
 
 - `Write-WorkspaceLog.ps1`
 
-The public functions all initialize workspace logging early so both successful progress and failures can be reviewed from a predictable repo-local location.
+The root entry scripts source that helper before dot-sourcing the public workflow functions, and the public functions initialize workspace logging early so both successful progress and failures can be reviewed from a predictable repo-local location.
 
 ## Behavioral Contracts That Matter
 
