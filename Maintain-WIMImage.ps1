@@ -7,8 +7,10 @@
     WIM from the repository-local Build\WIM folder, performs offline maintenance tasks,
     and commits changes. Example maintenance included here: removing the empty
     C:\CapturedImages folder so that deployed systems do not contain a distracting
-    placeholder directory. It has been tested from an elevated Deployment and Imaging
-    Tools Environment session using both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
+    placeholder directory. It is an operator-facing entrypoint that hands off to
+    Update-WinPEWimImage in src/Public and is intended to be run from an elevated
+    Deployment and Imaging Tools Environment session using PowerShell 7 (pwsh) as the
+    standard host shell.
 
     Logging is lifecycle-safe and recruiter-friendly:
       * All messages are written to the console immediately.
@@ -16,8 +18,8 @@
       * All subsequent events are appended directly to the log file.
 
 .EXAMPLE
-    PowerShell.exe .\New-WinPEWorkspace.ps1
-    PowerShell.exe .\Maintain-WIMImage.ps1
+    pwsh .\New-WinPEWorkspace.ps1
+    pwsh .\Maintain-WIMImage.ps1
 
     Initializes the repository-local runtime folders, mounts the configured WIM from
     Build\WIM, applies the offline maintenance step, and saves the image.

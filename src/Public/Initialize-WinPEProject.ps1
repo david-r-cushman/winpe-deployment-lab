@@ -5,9 +5,8 @@
 .DESCRIPTION
     Validates the checked-in project configuration, ensures the required
     repo-local runtime folders exist under Build, and initializes logging. This public
-    function has been tested through the root wrapper flow from an elevated Deployment
-    and Imaging Tools Environment session using both Windows PowerShell 5.1 and
-    PowerShell 7 (pwsh).
+    function is intended to be invoked through the root operator entrypoint
+    New-WinPEWorkspace.ps1, using PowerShell 7 (pwsh) as the documented host shell.
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.
@@ -15,7 +14,8 @@
 .EXAMPLE
     Initialize-WinPEProject -ProjectRoot 'E:\Git\winpe-deployment-lab'
 
-    Validates configuration and prepares the repo-local runtime structure.
+    Validates configuration and prepares the repo-local runtime structure for the
+    root operator workflow.
 #>
 function Initialize-WinPEProject {
     [CmdletBinding()]

@@ -11,6 +11,9 @@ Describe 'Get-WinPEProjectContext' {
                 [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
                 [string]$Level = 'INFO'
             )
+
+            $null = $Message
+            $null = $Level
         }
 
         . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
@@ -82,6 +85,9 @@ Describe 'Initialize-WinPEProjectRuntime' {
                 [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
                 [string]$Level = 'INFO'
             )
+
+            $null = $Message
+            $null = $Level
         }
 
         . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
@@ -122,15 +128,15 @@ Describe 'Initialize-WinPEProjectRuntime' {
     It 'throws when PayloadTemplates is missing' {
         $context = [pscustomobject]@{
             Paths = [pscustomobject]@{
-                BuildRoot           = Join-Path $TestDrive 'Build'
-                IsoRoot             = Join-Path $TestDrive 'Build\ISO'
-                WimRoot             = Join-Path $TestDrive 'Build\WIM'
-                LogRoot             = Join-Path $TestDrive 'Build\Logs'
-                MountRoot           = Join-Path $TestDrive 'Build\Mount'
-                CaptureMountRoot    = Join-Path $TestDrive 'Build\Mount\Capture'
-                DeployMountRoot     = Join-Path $TestDrive 'Build\Mount\Deploy'
-                WimMountRoot        = Join-Path $TestDrive 'Build\Mount\WIM'
-                WinPERoot           = Join-Path $TestDrive 'Build\WinPE'
+                BuildRoot = Join-Path $TestDrive 'Build'
+                IsoRoot = Join-Path $TestDrive 'Build\ISO'
+                WimRoot = Join-Path $TestDrive 'Build\WIM'
+                LogRoot = Join-Path $TestDrive 'Build\Logs'
+                MountRoot = Join-Path $TestDrive 'Build\Mount'
+                CaptureMountRoot = Join-Path $TestDrive 'Build\Mount\Capture'
+                DeployMountRoot = Join-Path $TestDrive 'Build\Mount\Deploy'
+                WimMountRoot = Join-Path $TestDrive 'Build\Mount\WIM'
+                WinPERoot = Join-Path $TestDrive 'Build\WinPE'
                 PayloadTemplateRoot = Join-Path $TestDrive 'PayloadTemplates'
             }
         }
@@ -152,6 +158,9 @@ Describe 'Enable-WinPEPowerShellSupport' {
                 [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
                 [string]$Level = 'INFO'
             )
+
+            $null = $Message
+            $null = $Level
         }
 
         . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
@@ -196,6 +205,9 @@ Describe 'Remove-ItemIfPresent' {
                 [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
                 [string]$Level = 'INFO'
             )
+
+            $null = $Message
+            $null = $Level
         }
 
         . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')
@@ -206,10 +218,10 @@ Describe 'Remove-ItemIfPresent' {
         New-Item -Path $path -ItemType Directory -Force | Out-Null
         'content' | Set-Content -Path (Join-Path $path 'file.txt')
 
-        Remove-ItemIfPresent -Path $path
+        Remove-ItemIfPresent -Path $path -Confirm:$false
         $path | Should -Not -Exist
 
-        { Remove-ItemIfPresent -Path $path } | Should -Not -Throw
+        { Remove-ItemIfPresent -Path $path -Confirm:$false } | Should -Not -Throw
     }
 }
 
@@ -226,6 +238,9 @@ Describe 'New-WinPEDeployIso' {
                 [ValidateSet('INFO', 'SUCCESS', 'WARNING', 'ERROR')]
                 [string]$Level = 'INFO'
             )
+
+            $null = $Message
+            $null = $Level
         }
 
         function Initialize-WorkspaceLogging {
@@ -233,6 +248,9 @@ Describe 'New-WinPEDeployIso' {
                 [string]$WorkspaceRoot,
                 [string]$LogRoot
             )
+
+            $null = $WorkspaceRoot
+            $null = $LogRoot
         }
 
         . (Join-Path $projectRoot 'src\Private\ProjectRuntime.ps1')

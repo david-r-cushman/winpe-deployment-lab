@@ -31,27 +31,28 @@ function Get-WinPEProjectContext {
     }
 
     $paths = [pscustomobject]@{
-        BuildRoot           = Join-Path $ProjectRoot 'Build'
-        IsoRoot             = Join-Path $ProjectRoot 'Build\ISO'
-        WimRoot             = Join-Path $ProjectRoot 'Build\WIM'
-        LogRoot             = Join-Path $ProjectRoot 'Build\Logs'
-        MountRoot           = Join-Path $ProjectRoot 'Build\Mount'
-        CaptureMountRoot    = Join-Path $ProjectRoot 'Build\Mount\Capture'
-        DeployMountRoot     = Join-Path $ProjectRoot 'Build\Mount\Deploy'
-        WimMountRoot        = Join-Path $ProjectRoot 'Build\Mount\WIM'
-        WinPERoot           = Join-Path $ProjectRoot 'Build\WinPE'
-        CaptureWorkRoot     = Join-Path $ProjectRoot 'Build\WinPE\Capture'
-        DeployWorkRoot      = Join-Path $ProjectRoot 'Build\WinPE\Deploy'
+        BuildRoot = Join-Path $ProjectRoot 'Build'
+        IsoRoot = Join-Path $ProjectRoot 'Build\ISO'
+        WimRoot = Join-Path $ProjectRoot 'Build\WIM'
+        LogRoot = Join-Path $ProjectRoot 'Build\Logs'
+        MountRoot = Join-Path $ProjectRoot 'Build\Mount'
+        CaptureMountRoot = Join-Path $ProjectRoot 'Build\Mount\Capture'
+        DeployMountRoot = Join-Path $ProjectRoot 'Build\Mount\Deploy'
+        WimMountRoot = Join-Path $ProjectRoot 'Build\Mount\WIM'
+        WinPERoot = Join-Path $ProjectRoot 'Build\WinPE'
+        CaptureWorkRoot = Join-Path $ProjectRoot 'Build\WinPE\Capture'
+        DeployWorkRoot = Join-Path $ProjectRoot 'Build\WinPE\Deploy'
         PayloadTemplateRoot = Join-Path $ProjectRoot 'PayloadTemplates'
     }
 
-    [pscustomobject]@{
+    return [pscustomobject]@{
         ProjectRoot = $ProjectRoot
-        ConfigPath  = $configPath
-        Config      = $config
-        Paths       = $paths
+        ConfigPath = $configPath
+        Config = $config
+        Paths = $paths
     }
 }
+
 
 function Initialize-WinPEProjectRuntime {
     [CmdletBinding()]
@@ -166,7 +167,7 @@ function Enable-WinPEPowerShellSupport {
 }
 
 function Remove-ItemIfPresent {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Path
@@ -174,7 +175,9 @@ function Remove-ItemIfPresent {
 
     if (Test-Path -LiteralPath $Path) {
         try {
-            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            if ($PSCmdlet.ShouldProcess($Path, 'Remove item recursively')) {
+                Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            }
         }
         catch {
             throw "Failed to remove item at '$Path'. $($_.Exception.Message)"
@@ -182,7 +185,7 @@ function Remove-ItemIfPresent {
     }
 }
 
-function Prepare-MountDirectory {
+function Initialize-MountDirectory {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -201,7 +204,7 @@ function Prepare-MountDirectory {
             }
         }
         catch {
-            throw "Failed to prepare mount directory '$Path'. The directory must exist and be empty before mounting. $($_.Exception.Message)"
+            throw "Failed to initialize mount directory '$Path'. The directory must exist and be empty before mounting. $($_.Exception.Message)"
         }
     }
 }

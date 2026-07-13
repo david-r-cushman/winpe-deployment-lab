@@ -17,17 +17,18 @@
 
     The resulting ISO launches PowerShell in WinPE, automates disk partitioning, applies
     the captured WIM to C:\, configures boot files, injects Unattend.xml, stages a
-    post-deploy bootstrap under C:\Windows\Setup\Scripts, and shuts down the VM. It has
-    been tested from an elevated Deployment and Imaging Tools Environment session using
-    both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
+    post-deploy bootstrap under C:\Windows\Setup\Scripts, and shuts down the VM. It is
+    an operator-facing entrypoint that hands off to New-WinPEDeployIso in src/Public and
+    is intended to be run from an elevated Deployment and Imaging Tools Environment
+    session using PowerShell 7 (pwsh) as the standard host shell.
 
 .PARAMETER None
     All configuration is driven by the checked-in config\osd-config.json file.
 
 .EXAMPLE
-    PowerShell.exe .\New-WinPEWorkspace.ps1
+    pwsh .\New-WinPEWorkspace.ps1
     Copy-Item .\SomeReferenceImage.wim .\Build\WIM\<Configured-WIMName>.wim
-    PowerShell.exe .\New-WinPEDeployISO.ps1
+    pwsh .\New-WinPEDeployISO.ps1
 
     Initializes the repository-local runtime folders, places the captured WIM in Build\WIM,
     and builds the deployment ISO in Build\ISO.
@@ -40,8 +41,8 @@
     IMPORTANT:
     This script must be executed from within the "Deployment and Imaging Tools Environment"
     shell provided by the Windows ADK, launched as Administrator. Required tools include
-    copype.cmd, MakeWinPEMedia, and DISM. The tested host shells are Windows PowerShell 5.1
-    (powershell.exe) and PowerShell 7 (pwsh).
+    copype.cmd, MakeWinPEMedia, and DISM. The standard host shell for documented
+    usage is PowerShell 7 (pwsh).
 #>
 
 . "$PSScriptRoot\Write-WorkspaceLog.ps1"

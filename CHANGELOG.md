@@ -6,16 +6,14 @@ This project uses Semantic Versioning for the project itself. The project versio
 
 ## Unreleased
 
-### Added
-
-- Added `docs/project-architecture-overview.md` to document the repository architecture and portfolio framing.
+## 0.1.1 - 2026-07-13
 
 ### Changed
 
-- Synced template guidance and downstream workflow assets from `pwsh-dev-template` guidance version `0.15.0`.
-- Refreshed `AGENTS.md` and `.github/copilot-instructions.md` with the current downstream guidance contract.
-- Added downstream cleanup and README alignment workflow assets for future repo maintenance.
-- Updated the README template-version badge to `template-0.15.0`.
+- Aligned the root operator scripts, public workflow functions, and architecture docs to the current PowerShell 7 (`pwsh`) operator baseline.
+- Clarified the maintained wrapper-plus-implementation script model, including the root-scoped role of `Write-WorkspaceLog.ps1`.
+- Added `ShouldProcess` support to the state-changing workflow functions and cleanup helper to better match current repository standards.
+- Corrected project script and unit-test analyzer issues so the project script surface passes the current repo validation contract.
 
 ## 0.1.0 - 2026-06-22
 

@@ -6,9 +6,8 @@
     Validates the configured captured WIM, stages deployment payload files,
     customizes boot.wim with WinPE PowerShell support and generated deployment
     logic, and creates a deployment ISO under the repo-local Build structure. This public
-    function has been tested through the root wrapper flow from an elevated Deployment
-    and Imaging Tools Environment session using both Windows PowerShell 5.1 and
-    PowerShell 7 (pwsh).
+    function is intended to be invoked through the root operator entrypoint
+    New-WinPEDeployISO.ps1, using PowerShell 7 (pwsh) as the documented host shell.
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.
@@ -16,10 +15,10 @@
 .EXAMPLE
     New-WinPEDeployIso -ProjectRoot 'E:\Git\winpe-deployment-lab'
 
-    Builds the deployment ISO using the current repo configuration and payload files.
+    Builds the deployment ISO used by the root operator workflow.
 #>
 function New-WinPEDeployIso {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter()]
         [string]$ProjectRoot = (Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent)
@@ -31,6 +30,10 @@ function New-WinPEDeployIso {
 
     Assert-AdministratorSession
     Assert-AdkEnvironment
+
+    if (-not $PSCmdlet.ShouldProcess($ProjectRoot, 'Build WinPE deployment ISO artifacts')) {
+        return
+    }
 
     $wimName = $context.Config.WIMName
     $wimPath = Join-Path $context.Paths.WimRoot $wimName
@@ -160,7 +163,7 @@ Invoke-NativeCommand -FilePath 'wpeutil' -ArgumentList @('shutdown') -Descriptio
     $bootWimMounted = $false
     $saveBootWimChanges = $false
     try {
-        Prepare-MountDirectory -Path $mountPath
+        Initialize-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath -ErrorAction Stop
         $bootWimMounted = $true
         Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS

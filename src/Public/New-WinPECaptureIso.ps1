@@ -6,9 +6,9 @@
     Uses the current repo configuration to create a capture ISO, adds
     WinPE PowerShell support to boot.wim, injects generated capture logic,
     and prepares the ISO to capture a reference image to the configured
-    capture location. This public function has been tested through the root wrapper flow
-    from an elevated Deployment and Imaging Tools Environment session using both Windows
-    PowerShell 5.1 and PowerShell 7 (pwsh).
+    capture location. This public function is intended to be invoked through the root
+    operator entrypoint New-WinPECaptureISO.ps1, using PowerShell 7 (pwsh) as the
+    documented host shell.
 
 .PARAMETER ProjectRoot
     The repository root for the WinPE project. Defaults to the current script root.
@@ -16,10 +16,10 @@
 .EXAMPLE
     New-WinPECaptureIso -ProjectRoot 'E:\Git\winpe-deployment-lab'
 
-    Builds the capture ISO using the current repo configuration.
+    Builds the capture ISO used by the root operator workflow.
 #>
 function New-WinPECaptureIso {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter()]
         [string]$ProjectRoot = (Split-Path -Path $PSScriptRoot -Parent | Split-Path -Parent)
@@ -31,6 +31,10 @@ function New-WinPECaptureIso {
 
     Assert-AdministratorSession
     Assert-AdkEnvironment
+
+    if (-not $PSCmdlet.ShouldProcess($ProjectRoot, 'Build WinPE capture ISO artifacts')) {
+        return
+    }
 
     $bootISOName = $context.Config.BootISOName
     $bootISOPath = Join-Path $context.Paths.IsoRoot $bootISOName
@@ -107,7 +111,7 @@ Invoke-NativeCommand -FilePath 'dism' -ArgumentList @(
     $bootWimMounted = $false
     $saveBootWimChanges = $false
     try {
-        Prepare-MountDirectory -Path $mountPath
+        Initialize-MountDirectory -Path $mountPath
         Mount-WindowsImage -ImagePath $bootWim -Index 1 -Path $mountPath -ErrorAction Stop
         $bootWimMounted = $true
         Write-WorkspaceLog "Mounted boot.wim at $mountPath" -Level SUCCESS

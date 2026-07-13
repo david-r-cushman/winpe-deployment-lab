@@ -16,15 +16,16 @@
 
     The resulting ISO automatically launches PowerShell in WinPE, captures a WIM image of
     the reference VM, and saves it to the capture location defined in config\osd-config.json.
-    It has been tested from an elevated Deployment and Imaging Tools Environment session
-    using both Windows PowerShell 5.1 and PowerShell 7 (pwsh).
+    It is an operator-facing entrypoint that hands off to New-WinPECaptureIso in
+    src/Public and is intended to be run from an elevated Deployment and Imaging Tools
+    Environment session using PowerShell 7 (pwsh) as the standard host shell.
 
 .PARAMETER None
     All configuration is driven by the checked-in config\osd-config.json file.
 
 .EXAMPLE
-    PowerShell.exe .\New-WinPEWorkspace.ps1
-    PowerShell.exe .\New-WinPECaptureISO.ps1
+    pwsh .\New-WinPEWorkspace.ps1
+    pwsh .\New-WinPECaptureISO.ps1
 
     Initializes the repository-local runtime folders, then builds the capture ISO in
     Build\ISO using values from config\osd-config.json.
@@ -37,8 +38,8 @@
     IMPORTANT:
     This script must be executed from within the "Deployment and Imaging Tools Environment"
     shell provided by the Windows ADK, launched as Administrator. Required tools include
-    copype.cmd, MakeWinPEMedia, and DISM. The tested host shells are Windows PowerShell 5.1
-    (powershell.exe) and PowerShell 7 (pwsh).
+    copype.cmd, MakeWinPEMedia, and DISM. The standard host shell for documented
+    usage is PowerShell 7 (pwsh).
 #>
 
 . "$PSScriptRoot\Write-WorkspaceLog.ps1"
