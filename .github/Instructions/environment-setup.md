@@ -1,83 +1,71 @@
-# Environment Setup: PowerShell 7.4 Template
+# Environment Setup: WinPE Deployment Lab
 
 ## Overview
 
-This repository provides a reusable PowerShell development baseline that can be used locally in VS Code, in a Docker Dev Container, or in GitHub Codespaces.
+This repository is intended to be developed and operated locally on Windows. The implementation relies on DISM plus the Windows ADK Deployment Tools and WinPE optional components, so the actual WinPE build and offline servicing workflow does not map cleanly to Linux containers or GitHub Codespaces.
 
-The goal of the environment is to improve consistency, reduce unnecessary host-tooling drift, and make it easier to start new PowerShell Core projects with a ready-to-use structure and toolchain.
+The goal of the environment is to keep the operator workflow explicit and reproducible: the repository stays local, the ADK toolchain stays on the Windows host, and the PowerShell entry points run from an elevated Deployment and Imaging Tools Environment session when build, capture, deployment, or WIM-servicing work is being performed.
 
-## Development Modes
+## Development Model
 
-- **Local VS Code:** Work directly from the host editor with the repository's recommended extensions and settings.
-- **Dev Container:** Reopen the repository in a containerized Linux development environment.
-- **GitHub Codespaces:** Use the same repository structure in a browser-accessible hosted environment.
+- **Local Windows Host:** Use the repository directly from a Windows workstation or VM with the ADK toolchain installed.
+- **VS Code Editing:** Use VS Code for editing, navigation, and review if desired, but run WinPE build operations from an elevated ADK shell.
+- **Repo-Local Workspace:** Runtime folders are created under `Build` inside the repository rather than in a second generated workspace.
 
 ## Technical Stack
 
 <!-- BEGIN generated:environment-runtime-stack -->
-- **Runtime:** PowerShell 7.4.x (LTS) on Ubuntu 22.04
+- **Runtime:** PowerShell 7.4.x for repository development on Windows with the Windows ADK Deployment Tools and WinPE optional components
 <!-- END generated:environment-runtime-stack -->
-- **Local Container Runtime:** Docker Desktop via WSL 2 backend
-- **Editor Support:** VS Code settings, launch configuration, and extension recommendations
+- **Operator Shell:** Elevated Deployment and Imaging Tools Environment session for `copype.cmd`, `MakeWinPEMedia`, and DISM-backed image servicing
+- **Image Toolchain:** Windows ADK Deployment Tools, WinPE add-on / optional components, and DISM
 <!-- BEGIN generated:environment-tooling-stack -->
-- **Tooling:** Azure CLI, Pester 6.0.0, PSScriptAnalyzer 1.25.0, and PSReadLine 2.4.5
+- **Tooling:** Pester 6.0.0, PSScriptAnalyzer 1.25.0, and PSReadLine 2.4.5
 <!-- END generated:environment-tooling-stack -->
-- **Governance:** `.editorconfig`, Markdown linting, and repository Copilot instructions
+- **Governance:** `.editorconfig`, repository guidance, generated Markdown validation, and repo checks
 
-## Prerequisites For Local Container Use
+## Local Prerequisites
 
-Before opening this project in a local Dev Container, ensure the host machine is configured as follows:
+Before running the WinPE workflow, ensure the host machine is configured as follows:
 
-1. **WSL 2:** Installed and updated with `wsl --update`
-2. **Docker Desktop:** Configured to use the WSL 2 engine
-3. **VS Code:** Installed with the Dev Containers extension
+1. **Windows:** Use a Windows host for build, capture, deployment, and WIM-servicing operations.
+2. **PowerShell:** Install PowerShell 7.4 (`pwsh`) for the maintained development and operator baseline.
+3. **Windows ADK Deployment Tools:** Install the ADK components that provide `copype.cmd` and `MakeWinPEMedia`.
+4. **WinPE Optional Components:** Install the WinPE add-on so boot media can include PowerShell-enabled payloads.
+5. **Elevation:** Run ADK and DISM-dependent operations from an elevated session.
 
-Recommended supporting extensions include:
+Recommended supporting tools include:
 
 - `ms-vscode.PowerShell`
 - `ms-vscode.editorconfig`
-- `ms-azuretools.vscode-docker`
-- `ms-vscode.azurecli`
 - `DavidAnson.vscode-markdownlint`
 
 ## Getting Started
 
-### Local Dev Container
+1. Open the repository locally on a Windows host.
+2. Review the tracked configuration in `config/osd-config.json` and the payload content under `PayloadTemplates`.
+3. Create and validate a local ignored `PayloadTemplates/Unattend.xml` for the image and deployment flow you want to test.
+4. Launch an elevated Deployment and Imaging Tools Environment session.
+5. Run the root PowerShell entry points from the repository root as needed.
 
-When you open this folder in VS Code, you should be prompted to reopen the repository in a Dev Container.
+## PowerShell Profile And Shell Use
 
-That flow:
+Normal editing and validation should use PowerShell 7 (`pwsh`), and WinPE build operations should be driven from the elevated ADK shell so the required Microsoft tooling is already on `PATH`.
 
-- builds the Dockerfile-based development image
-- installs the baseline PowerShell tooling inside the container
-- starts an interactive PowerShell environment with the configured profile
-
-### GitHub Codespaces
-
-If you are using GitHub Codespaces instead, create a Codespace from a repository generated from this template and open the project in the browser-based editor.
-
-## PowerShell Profile Behavior
-
-The container environment includes a global PowerShell profile located at `/opt/microsoft/powershell/7/Microsoft.PowerShell_profile.ps1`.
-
-That profile:
-
-- imports `PSReadLine`
-- enables history-based prediction
-- enables ListView completion
-- displays a startup message confirming the template environment has loaded
+That split keeps day-to-day repository work flexible while preserving a predictable execution path for DISM and media-generation operations.
 
 ## Design Principles
 
 <!-- BEGIN generated:environment-runtime-principle -->
-- **Controlled Base Runtime:** The container starts from a pinned PowerShell 7.4 on Ubuntu 22.04 base image
+- **Controlled Operator Environment:** WinPE build and servicing work stays on a Windows host with the ADK Deployment Tools and WinPE optional components installed
 <!-- END generated:environment-runtime-principle -->
-- **Consistent Tooling Baseline:** Core tools are installed automatically so new repositories begin from a predictable starting point, even though not every tool is version-pinned
-- **Cross-Platform Formatting:** LF line endings and editor settings are used to reduce host and container formatting drift
-- **Credential Boundary Awareness:** Development containers are intended to avoid pulling host-resident GitHub Copilot authentication state into the container environment
+- **Repository-As-Workspace:** The repository itself remains the working area, with runtime state created locally under `Build`.
+- **Visible Deployment Mechanics:** The environment is designed to keep WinPE, DISM, WIM handling, and unattended deployment steps easy to inspect and validate.
+- **Windows-Native Tooling:** The repository deliberately leans on the Microsoft toolchain this workflow actually requires rather than wrapping it in a container abstraction that cannot execute the full build path.
 
 ## Troubleshooting
 
-- **Module Not Found:** Rebuild the container without cache to force a clean environment refresh
-- **Line Ending Errors:** Verify `git config core.autocrlf` is set to `input` or `false`
-- **Identity Issues:** Run `az login` inside the container or Codespaces terminal to authenticate that environment
+- **ADK Commands Not Found:** Reopen an elevated Deployment and Imaging Tools Environment session and confirm the ADK Deployment Tools are installed.
+- **WinPE PowerShell Support Missing:** Verify the WinPE add-on / optional components are installed and that the build process is staging the required packages into `boot.wim`.
+- **DISM Access Errors:** Confirm the session is elevated before mounting or servicing WIM files.
+- **Unattend Issues:** Revalidate the local ignored `PayloadTemplates/Unattend.xml` and confirm it matches the intended image and deployment flow.

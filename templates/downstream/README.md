@@ -15,7 +15,7 @@ Quick navigation:
 - [Repository Structure](#repository-structure)
 
 <!-- BEGIN generated:readme-runtime-focus -->
-- PowerShell 7.4 development
+- PowerShell 7.4 development on Windows
 <!-- END generated:readme-runtime-focus -->
 
 ## Portfolio Context
@@ -25,7 +25,7 @@ This repository is part of a PowerShell portfolio built from `pwsh-dev-template`
 ## Engineering Principles in Practice
 
 <!-- BEGIN generated:readme-runtime-philosophy -->
-- **Deterministic Base Runtime:** The development container is built from a pinned PowerShell 7.4 on Ubuntu 22.04 base image to reduce environmental drift
+- **Deterministic Development Runtime:** PowerShell 7.4 is the maintained development baseline, while WinPE build and servicing work stays on a Windows host with the ADK toolchain it requires
 <!-- END generated:readme-runtime-philosophy -->
 - **Deterministic Workflows:** Prefer repeatable scripts, explicit validation, and reviewable changes over one-off manual steps
 - **Small Safe Changes:** Solve the requested problem with the smallest reasonable change before introducing more structure
@@ -45,7 +45,7 @@ For the deeper operating model behind that approach, see [`docs/powershell-ai-op
 ## Runtime And Environment
 
 <!-- BEGIN generated:readme-runtime-stack -->
-- **Runtime:** PowerShell 7.4.x (LTS) on Ubuntu 22.04
+- **Runtime:** PowerShell 7.4.x for repository development on Windows with the Windows ADK Deployment Tools and WinPE optional components
 <!-- END generated:readme-runtime-stack -->
 - **Development Modes:** Local VS Code, Docker Dev Containers, and GitHub Codespaces
 - **Isolation Strategy:** Use the container to reduce host tooling and credential exposure during development work
@@ -56,7 +56,6 @@ For the deeper operating model behind that approach, see [`docs/powershell-ai-op
 <!-- BEGIN generated:readme-tooling-list -->
 - **Pester 6.0.0:** For unit and integration testing
 - **PSScriptAnalyzer 1.25.0:** To enforce PowerShell best practices and security rules
-- **Azure CLI:** Pre-installed for cloud resource management
 - **PSReadLine 2.4.5:** Configured for a more efficient terminal experience
 <!-- END generated:readme-tooling-list -->
 

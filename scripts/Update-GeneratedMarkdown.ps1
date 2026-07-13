@@ -78,17 +78,17 @@ function Set-GeneratedMarkdownBlock {
     }
 }
 
-$runtimeLine = '- **Runtime:** PowerShell {0} (LTS) on Ubuntu {1}' -f $policy.runtime.powershellVersionLabel, $policy.runtime.ubuntuVersion
-$toolingLine = '- **Tooling:** Azure CLI, Pester {0}, PSScriptAnalyzer {1}, and PSReadLine {2}' -f $policy.tooling.pesterVersion, $policy.tooling.psScriptAnalyzerVersion, $policy.tooling.psReadLineVersion
-$baseRuntimeLine = '- **Deterministic Base Runtime:** The development container is built from a pinned PowerShell {0} on Ubuntu {1} base image to reduce environmental drift' -f $policy.runtime.powershellVersion, $policy.runtime.ubuntuVersion
-$controlledRuntimeLine = '- **Controlled Base Runtime:** The container starts from a pinned PowerShell {0} on Ubuntu {1} base image' -f $policy.runtime.powershellVersion, $policy.runtime.ubuntuVersion
+$runtimeLine = '- **Runtime:** PowerShell {0} for repository development on {1}' -f $policy.runtime.powershellVersionLabel, $policy.runtime.developmentHost
+$toolingLine = '- **Tooling:** Pester {0}, PSScriptAnalyzer {1}, and PSReadLine {2}' -f $policy.tooling.pesterVersion, $policy.tooling.psScriptAnalyzerVersion, $policy.tooling.psReadLineVersion
+$baseRuntimeLine = '- **Deterministic Development Runtime:** PowerShell {0} is the maintained development baseline, while WinPE build and servicing work stays on a {1} with the ADK toolchain it requires' -f $policy.runtime.powershellVersion, $policy.runtime.buildPlatform
+$controlledRuntimeLine = '- **Controlled Operator Environment:** WinPE build and servicing work stays on a {0} with the ADK Deployment Tools and WinPE optional components installed' -f $policy.runtime.buildPlatform
 
 Set-GeneratedMarkdownBlock -RelativePath 'README.md' -BlockName 'readme-powershell-badge' -Lines @(
     '![PowerShell {0}](https://img.shields.io/badge/PowerShell-{0}-blue)' -f $policy.runtime.powershellVersion
 )
 
 Set-GeneratedMarkdownBlock -RelativePath 'README.md' -BlockName 'readme-runtime-focus' -Lines @(
-    '- PowerShell {0} development' -f $policy.runtime.powershellVersion
+    '- PowerShell {0} development on Windows' -f $policy.runtime.powershellVersion
 )
 
 Set-GeneratedMarkdownBlock -RelativePath 'README.md' -BlockName 'readme-runtime-stack' -Lines @(
@@ -98,7 +98,6 @@ Set-GeneratedMarkdownBlock -RelativePath 'README.md' -BlockName 'readme-runtime-
 Set-GeneratedMarkdownBlock -RelativePath 'README.md' -BlockName 'readme-tooling-list' -Lines @(
     ('- **Pester {0}:** For unit and integration testing' -f $policy.tooling.pesterVersion),
     ('- **PSScriptAnalyzer {0}:** To enforce PowerShell best practices and security rules' -f $policy.tooling.psScriptAnalyzerVersion),
-    '- **Azure CLI:** Pre-installed for cloud resource management',
     ('- **PSReadLine {0}:** Configured for a more efficient terminal experience' -f $policy.tooling.psReadLineVersion)
 )
 
@@ -111,7 +110,7 @@ Set-GeneratedMarkdownBlock -RelativePath 'templates/downstream/README.md' -Block
 )
 
 Set-GeneratedMarkdownBlock -RelativePath 'templates/downstream/README.md' -BlockName 'readme-runtime-focus' -Lines @(
-    '- PowerShell {0} development' -f $policy.runtime.powershellVersion
+    '- PowerShell {0} development on Windows' -f $policy.runtime.powershellVersion
 )
 
 Set-GeneratedMarkdownBlock -RelativePath 'templates/downstream/README.md' -BlockName 'readme-runtime-stack' -Lines @(
@@ -121,7 +120,6 @@ Set-GeneratedMarkdownBlock -RelativePath 'templates/downstream/README.md' -Block
 Set-GeneratedMarkdownBlock -RelativePath 'templates/downstream/README.md' -BlockName 'readme-tooling-list' -Lines @(
     ('- **Pester {0}:** For unit and integration testing' -f $policy.tooling.pesterVersion),
     ('- **PSScriptAnalyzer {0}:** To enforce PowerShell best practices and security rules' -f $policy.tooling.psScriptAnalyzerVersion),
-    '- **Azure CLI:** Pre-installed for cloud resource management',
     ('- **PSReadLine {0}:** Configured for a more efficient terminal experience' -f $policy.tooling.psReadLineVersion)
 )
 

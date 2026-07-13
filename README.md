@@ -18,7 +18,7 @@ Quick navigation:
 - [Repository Structure](#repository-structure)
 
 <!-- BEGIN generated:readme-runtime-focus -->
-- PowerShell 7.4 development
+- PowerShell 7.4 development on Windows
 <!-- END generated:readme-runtime-focus -->
 
 ## Portfolio Context
@@ -36,7 +36,7 @@ If you are reviewing the repository for the first time, begin with the root scri
 ## Engineering Principles in Practice
 
 <!-- BEGIN generated:readme-runtime-philosophy -->
-- **Deterministic Base Runtime:** The development container is built from a pinned PowerShell 7.4 on Ubuntu 22.04 base image to reduce environmental drift
+- **Deterministic Development Runtime:** PowerShell 7.4 is the maintained development baseline, while WinPE build and servicing work stays on a Windows host with the ADK toolchain it requires
 <!-- END generated:readme-runtime-philosophy -->
 - **Repository-As-Workspace:** The repository itself is the working area. Tracked source, configuration, and payload templates live alongside repo-local runtime folders so the full workflow stays visible and repeatable.
 - **Tracked Configuration, Local Runtime State:** Project configuration belongs in version control, while generated artifacts, mount paths, logs, and deployment runtime state stay local under `Build` and out of git.
@@ -60,19 +60,18 @@ If you want to inspect or reproduce the workflow this repository demonstrates, u
 ## Runtime And Environment
 
 <!-- BEGIN generated:readme-runtime-stack -->
-- **Runtime:** PowerShell 7.4.x (LTS) on Ubuntu 22.04
+- **Runtime:** PowerShell 7.4.x for repository development on Windows with the Windows ADK Deployment Tools and WinPE optional components
 <!-- END generated:readme-runtime-stack -->
 - **Operator Host:** Windows with the Windows ADK Deployment Tools and WinPE optional components available for ISO creation and image servicing
-- **Execution Model:** Root scripts are typically run from an elevated Deployment and Imaging Tools Environment session using either Windows PowerShell 5.1 or PowerShell 7
+- **Execution Model:** Root scripts are intended to be run with PowerShell 7 (`pwsh`) from an elevated Deployment and Imaging Tools Environment session
 - **Workspace Model:** The repository itself is the working area, with runtime artifacts created under repo-local `Build` paths instead of a second generated workspace
-- **Development Modes:** Local VS Code, Docker Dev Containers, and GitHub Codespaces remain available for repository development and validation work even though WinPE build operations themselves are Windows-specific
+- **Development Modes:** Local Windows editing and validation are the intended workflow, with WinPE build and servicing operations run from an elevated ADK shell because the required DISM and media tools are Windows-specific
 
 ## Tooling
 
 <!-- BEGIN generated:readme-tooling-list -->
 - **Pester 6.0.0:** For unit and integration testing
 - **PSScriptAnalyzer 1.25.0:** To enforce PowerShell best practices and security rules
-- **Azure CLI:** Pre-installed for cloud resource management
 - **PSReadLine 2.4.5:** Configured for a more efficient terminal experience
 <!-- END generated:readme-tooling-list -->
 
@@ -169,19 +168,18 @@ Typical customization examples include changing the configured image name and de
 - The reference image is meant to produce standardized, disposable lab systems in a known-good state before additional testing begins.
 - The current implementation intentionally prioritizes image capture, offline servicing, deployment, and a small amount of post-deploy bootstrap work over broader enterprise imaging concerns.
 - Hardware-specific workflows such as driver injection are out of scope for this project because the target environment is virtualized rather than physical.
-- The bundled post-deploy software installation is intentionally minimal. PowerShell 7.6 is included as a practical example of post-deployment automation and a useful baseline for further testing.
+- The bundled post-deploy software installation is intentionally minimal. The repository itself is maintained on PowerShell 7.4, while the deployed VM currently installs PowerShell 7.6 as a practical example of post-deployment automation and a useful baseline for further testing.
 - This workflow is currently validated for unattended Desktop Experience-style OOBE deployments. While Windows Server Core uses the same Sysprep and unattend mechanisms, the current post-deployment flow assumes an automatic Administrator logon and RunOnce-based bootstrap, which has not been validated against Server Core.
 
 ## Script Usage
 
 Run these from the repository root unless noted otherwise.
 
-The root scripts have been tested from an elevated Deployment and Imaging Tools Environment session using both Windows PowerShell 5.1 and PowerShell 7 (`pwsh`).
+The root scripts are intended to be run with PowerShell 7 (`pwsh`) from an elevated Deployment and Imaging Tools Environment session.
 
 Example host shells:
 
 ```powershell
-powershell.exe .\New-WinPEWorkspace.ps1
 pwsh .\New-WinPEWorkspace.ps1
 ```
 
@@ -195,7 +193,7 @@ Internally, each root script loads and calls a corresponding public function:
 ### Initialize Local Runtime Structure
 
 ```powershell
-PowerShell.exe .\New-WinPEWorkspace.ps1
+pwsh .\New-WinPEWorkspace.ps1
 ```
 
 Creates or validates the repo-local `Build` structure used for logs, mounts, WIM working files, and ISO output. It does not generate an answer file; deployment builds expect a local ignored [`PayloadTemplates/Unattend.xml`](PayloadTemplates/Unattend.xml) to already exist.
@@ -203,8 +201,8 @@ Creates or validates the repo-local `Build` structure used for logs, mounts, WIM
 ### Build Capture ISO
 
 ```powershell
-PowerShell.exe .\New-WinPEWorkspace.ps1
-PowerShell.exe .\New-WinPECaptureISO.ps1
+pwsh .\New-WinPEWorkspace.ps1
+pwsh .\New-WinPECaptureISO.ps1
 ```
 
 Builds a PowerShell-enabled WinPE capture ISO in [`Build/ISO`](Build/ISO) using values from [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Capture.ps1` payload inside WinPE.
@@ -212,8 +210,8 @@ Builds a PowerShell-enabled WinPE capture ISO in [`Build/ISO`](Build/ISO) using 
 ### Maintain a Captured WIM
 
 ```powershell
-PowerShell.exe .\New-WinPEWorkspace.ps1
-PowerShell.exe .\Maintain-WIMImage.ps1
+pwsh .\New-WinPEWorkspace.ps1
+pwsh .\Maintain-WIMImage.ps1
 ```
 
 Mounts the configured WIM from [`Build/WIM`](Build/WIM), applies the scripted maintenance step, and saves the image.
@@ -221,20 +219,20 @@ Mounts the configured WIM from [`Build/WIM`](Build/WIM), applies the scripted ma
 ### Build Deployment ISO
 
 ```powershell
-PowerShell.exe .\New-WinPEWorkspace.ps1
+pwsh .\New-WinPEWorkspace.ps1
 # Example only: use the filename configured in config\osd-config.json
 Copy-Item .\SomeReferenceImage.wim .\Build\WIM\<Configured-WIMName>.wim
-PowerShell.exe .\New-WinPEDeployISO.ps1
+pwsh .\New-WinPEDeployISO.ps1
 ```
 
 Builds a PowerShell-enabled deployment ISO in [`Build/ISO`](Build/ISO) using the configured WIM and payload templates. The filename placed in [`Build/WIM`](Build/WIM) must match the `WIMName` value in [`config/osd-config.json`](config/osd-config.json). The ISO boot image launches a generated `Deploy.ps1` payload inside WinPE.
 
-The current deployment payload also stages a post-deploy bootstrap under `C:\Windows\Setup\Scripts`. `SetupComplete.cmd` registers a one-time `RunOnce` launch for `PostDeploy.ps1`, which is currently used to install PowerShell 7.6 after the first automatic logon.
+The current deployment payload also stages a post-deploy bootstrap under `C:\Windows\Setup\Scripts`. `SetupComplete.cmd` registers a one-time `RunOnce` launch for `PostDeploy.ps1`, which is currently used to install PowerShell 7.6 inside the deployed VM after the first automatic logon.
 
 ## Prerequisites
 
 - Windows
-- PowerShell
+- PowerShell 7 (`pwsh`)
 - Windows ADK Deployment Tools / WinPE tooling
 - WinPE optional components that ship with the ADK so the build process can add PowerShell support to `boot.wim`
 - elevated session when running ADK and DISM-dependent operations
@@ -284,7 +282,7 @@ The project version is separate from the template-version badge at the top of th
   - `Unattend.xml` staging initially triggered an `oobeSystem` access-denied error until file handling in `C:\Windows\Panther` was tightened
   - running a full software install directly inside `SetupComplete.cmd` worked, but created a poor black-screen user experience; switching to `RunOnce` produced a much cleaner handoff
 - Offline image maintenance is intentional, not cosmetic. Capturing the WIM locally to `C:\CapturedImages` is simpler and more reliable than introducing networking into the capture phase, and [`Maintain-WIMImage.ps1`](Maintain-WIMImage.ps1) exists to remove that artifact cleanly before deployment.
-- Post-deploy software installation belongs after imaging, not inside the base image by default. The current example installs PowerShell 7.6 after first logon, which keeps the image reusable while still demonstrating application deployment and post-deployment automation.
+- Post-deploy software installation belongs after imaging, not inside the base image by default. The current example installs PowerShell 7.6 inside the deployed VM after first logon, which keeps the image reusable while still demonstrating application deployment and post-deployment automation.
 
 ## Current State
 
@@ -296,6 +294,6 @@ This repository began as a set of original project files dropped into the repo r
 - PowerShell-enabled WinPE media for both capture and deployment
 - offline WIM maintenance
 - safe unattended file handling
-- a validated post-deploy PowerShell 7.6 bootstrap
+- a validated post-deploy PowerShell 7.6 bootstrap inside the deployed VM
 
 The current focus is no longer on reorganizing the project, but on keeping the workflow reliable, understandable, and useful as a repeatable VM deployment template.
