@@ -143,23 +143,16 @@ function Test-PolicyRegexValue {
     }
 }
 
-Test-PolicyRegexValue -RelativePath '.devcontainer/Dockerfile' -Pattern '^FROM\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.runtime.dockerImage -Description 'Dev container base image'
-Test-PolicyRegexValue -RelativePath '.devcontainer/Dockerfile' -Pattern '^ARG\s+PESTER_VERSION=(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.pesterVersion -Description 'Dev container Pester version'
-Test-PolicyRegexValue -RelativePath '.devcontainer/Dockerfile' -Pattern '^ARG\s+PSSCRIPTANALYZER_VERSION=(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.psScriptAnalyzerVersion -Description 'Dev container PSScriptAnalyzer version'
-Test-PolicyRegexValue -RelativePath '.devcontainer/Dockerfile' -Pattern '^ARG\s+PSREADLINE_VERSION=(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.psReadLineVersion -Description 'Dev container PSReadLine version'
-Test-PolicyText -RelativePath '.devcontainer/Dockerfile' -ExpectedText ('PowerShell {0} Template Environment Loaded' -f $policy.runtime.powershellVersion) -Description 'Dev container profile banner'
-Test-PolicyText -RelativePath '.devcontainer/devcontainer.json' -ExpectedText ('PowerShell {0} Template' -f $policy.runtime.powershellVersion) -Description 'Dev container display name'
-
 Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*runs-on:\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.githubActions.runnerImage -Description 'GitHub Actions runner image'
 Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+Pester\s+.*?-RequiredVersion\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.pesterVersion -Description 'CI Pester version'
 Test-PolicyRegexValue -RelativePath '.github/workflows/ci.yml' -Pattern '^\s*Install-Module\s+PSScriptAnalyzer\s+.*?-RequiredVersion\s+(?<Value>\S+)\s*$' -ExpectedValue $policy.tooling.psScriptAnalyzerVersion -Description 'CI PSScriptAnalyzer version'
 
 Test-PolicyText -RelativePath 'README.md' -ExpectedText ('PowerShell {0}' -f $policy.runtime.powershellVersion) -Description 'README PowerShell version'
-Test-PolicyText -RelativePath 'README.md' -ExpectedText ('Ubuntu {0}' -f $policy.runtime.ubuntuVersion) -Description 'README Ubuntu version'
+Test-PolicyText -RelativePath 'README.md' -ExpectedText $policy.runtime.developmentHost -Description 'README development host'
 Test-PolicyText -RelativePath 'templates/downstream/README.md' -ExpectedText ('PowerShell {0}' -f $policy.runtime.powershellVersion) -Description 'Downstream README skeleton PowerShell version'
-Test-PolicyText -RelativePath 'templates/downstream/README.md' -ExpectedText ('Ubuntu {0}' -f $policy.runtime.ubuntuVersion) -Description 'Downstream README skeleton Ubuntu version'
+Test-PolicyText -RelativePath 'templates/downstream/README.md' -ExpectedText $policy.runtime.developmentHost -Description 'Downstream README skeleton development host'
 Test-PolicyText -RelativePath '.github/Instructions/environment-setup.md' -ExpectedText ('PowerShell {0}' -f $policy.runtime.powershellVersion) -Description 'Environment setup PowerShell version'
-Test-PolicyText -RelativePath '.github/Instructions/environment-setup.md' -ExpectedText ('Ubuntu {0}' -f $policy.runtime.ubuntuVersion) -Description 'Environment setup Ubuntu version'
+Test-PolicyText -RelativePath '.github/Instructions/environment-setup.md' -ExpectedText $policy.runtime.developmentHost -Description 'Environment setup development host'
 Test-PolicyText -RelativePath '.github/copilot-instructions.md' -ExpectedText ('PowerShell {0}' -f $policy.runtime.powershellVersionLabel) -Description 'Copilot instruction PowerShell compatibility target'
 
 if ($failures.Count -gt 0) {
